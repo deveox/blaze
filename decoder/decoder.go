@@ -87,13 +87,22 @@ func (t *Decoder) nativeDecoder(v reflect.Value) error {
 	case '"':
 		return t.decodeString(v)
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-':
-		t.Skip()
+		err := t.Skip()
+		if err != nil {
+			return err
+		}
 		return t.decodeNumber(v)
 	case 't', 'f':
-		t.Skip()
+		err := t.Skip()
+		if err != nil {
+			return err
+		}
 		return t.decodeBool(v)
 	case 'n':
-		t.Skip()
+		err := t.Skip()
+		if err != nil {
+			return err
+		}
 		return t.decodeNull(v)
 	case '[':
 		t.depth++

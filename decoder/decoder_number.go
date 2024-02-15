@@ -41,8 +41,10 @@ func (d *Decoder) SkipZero() error {
 		return d.SkipFloat()
 	case 'e':
 		return d.SkipExponent()
-	default:
+	case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
 		return d.Error("[Blaze SkipZero()] invalid char, expected '.' or 'e' (exponent)")
+	default:
+		return nil
 	}
 }
 

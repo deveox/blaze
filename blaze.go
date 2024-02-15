@@ -22,6 +22,10 @@ var ClientDecoder = &decoder.Config{
 	ContextScope: scopes.CONTEXT_CLIENT,
 }
 
+var AdminDecoder = &decoder.Config{
+	ContextScope: scopes.CONTEXT_ADMIN,
+}
+
 func Marshal(v any) ([]byte, error) {
 	return encoder.Marshal(v)
 }
@@ -36,4 +40,8 @@ var DBEncoder = &encoder.Config{
 
 var ClientEncoder = &encoder.Config{
 	ContextScope: scopes.CONTEXT_CLIENT,
+}
+
+var AdminEncoder = &encoder.Config{
+	ContextScope: scopes.CONTEXT_ADMIN,
 }

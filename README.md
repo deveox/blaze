@@ -10,46 +10,100 @@ It's not a drop-in replacement for standard library, though migration shouldn't 
 
 Blaze has 3 scopes:
 
-- **Context** - `HTTP` or `DB`. To define different behavior for your handlers/router (HTTP) and database (e.g. PostgreSQL, MongoDB)
-- **User** - `Admin` or `Client`. To define different behavior for different user types. Handy if you want to have same models for your /admin and /public API endpoints.
-- **Operation** - `Read`, `Write`, `Update`, `Create`. To define different behavior for different operations. E.g. you may want to allow clients to read some fields, but not to update them. It can help you to dramatically decrease the amount of code in your handlers.
+- **Admin** - for admin API endpoints
+- **Client** - for client API endpoints
+- **DB** - for database
 
-Example:
+`Admin` and `Client` scopes can be further configured for specific operations:
+
+- **Read** - for reading data. Tag: `read`;
+- **Write** - for writing data. Tag: `write`;
+  - **Update** - for updating data (e.g. PATCH handlers). Tag: `update`;
+  - **Create** - for creating data (e.g. POST handlers). Tag: `create`;
+- **Ignore** - to exclude data from serialization and deserialization. Tag: `-`;
+
+You can combine operations in a single tag using `.` as a separator, e.g. `blaze:"admin:read.create"`.
+
+Encoder always has a `Read` scope. Decoder can have `Write`, `Update` or `Create` scopes. Scope specific scopes can be obtained as follows:
+
+```go
+// Admin scope encoder
+blaze.Marshal(v)
+blaze.AdminEncoder.Marshal(v)
+blaze.MarshalScoped(v, scopes.CONTEXT_ADMIN)
+// Client scope encoder
+blaze.ClientEncoder.Marshal(v)
+blaze.MarshalScoped(v, scopes.CONTEXT_CLIENT)
+// DB scope encoder
+blaze.DBEncoder.Marshal(v)
+blaze.MarshalScoped(v, scopes.CONTEXT_DB)
+
+// Admin scope WRITE (update and create) decoder
+blaze.Unmarshal(data, &v)
+blaze.AdminDecoder.Unmarshal(data, &v)
+// Admin scope UPDATE decoder
+blaze.AdminDecoder.UnmarshalScoped(data, &v, scopes.DECODE_UPDATE)
+// Admin scope CREATE decoder
+blaze.AdminDecoder.UnmarshalScoped(data, &v, scopes.DECODE_CREATE)
+
+// Client scope WRITE decoder
+blaze.ClientDecoder.Unmarshal(data, &v)
+// Client scope UPDATE decoder
+blaze.ClientDecoder.UnmarshalScoped(data, &v, scopes.DECODE_UPDATE)
+// Client scope CREATE decoder
+blaze.ClientDecoder.UnmarshalScoped(data, &v, scopes.DECODE_CREATE)
+
+// DB scope WRITE decoder
+blaze.DBDecoder.Unmarshal(data, &v)
+// DB scope UPDATE decoder
+blaze.DBDecoder.UnmarshalScoped(data, &v, scopes.DECODE_UPDATE)
+// DB scope CREATE decoder
+blaze.DBDecoder.UnmarshalScoped(data, &v, scopes.DECODE_CREATE)
+```
+
+To use scopes, you need to define them in your structs using `blaze` tag. Blaze tag is a comma separated list of scopes and operations. If you omit scope, it will be applied to all scopes. If you omit operation, it will be applied to all operations.
 
 ```go
 // Define field scopes using blaze tag
 type User struct {
-    // This field is only available in admin context, in HTTP scope it's read only, in DB scope - no restrictions
-    ID int `blaze:"http:read,client:-"`
-    // This field is available as read/create only for clients. No context specific restrictions. No admin restrictions.
+    // Admin scope can only read (encode) this field.
+    // For client scope this field is not available at all.
+    ID int `blaze:"admin:read,client:-"`
+    // Admin scope doesn't have any restrictions (can read and write).
+    // For client scope this field is available for reading and creating.
     Name string `blaze:"client:read.create"`
-    // This field is available as read-only for any user and http scope. DB scope is not affected.
+    // Both admin and client scopes can only read this field.
     Role string `blaze:"read"`
+    // This field is ignored for DB scope. Admin and client scopes can read and write.
+    MySecret string `blaze:"no-db"`
+    // This field is ignored for all scopes.
+    Ignored string `blaze:"-"` // `json:"-"` will also work
 }
 ```
-
-Not all **Operations** are supported by all scopes. For example, DB scope support only `ignore` operation (a.k.a `-`). There's no reason to limit scope of operations in DB, because you always have a control over your database.
-
-| Scope  | Read | Write | Update | Create | Ignore (-) |
-| ------ | ---- | ----- | ------ | ------ | ---------- |
-| HTTP   | +    | +     | +      | +      | +          |
-| DB     | -    | -     | -      | -      | +          |
-| Admin  | +    | +     | +      | +      | +          |
-| Client | +    | +     | +      | +      | +          |
-
-| Operation | Tag      | Description                                                                           |
-| --------- | -------- | ------------------------------------------------------------------------------------- |
-| Read      | `read`   | Field is available for reading, usually applicable during Encoding                    |
-| Write     | `write`  | Field is available for writing, usually applicable during Decoding                    |
-| Update    | `update` | Field is available for updating, usually applicable during Decoding in PATCH handlers |
-| Create    | `create` | Field is available for creating, usually applicable during Decoding in POST handlers  |
-| Ignore    | `-`      | Field is ignored, applicable during both Encoding and Decoding                        |
-
-Tag format: `blaze:"scope:operation1.operation2"`, where `scope` is one of `http`, `db`, `admin`, `client` and operation is one of `read`, `write`, `update`, `create`, `-`. Optionally you can omit `scope`: `blaze:"operation1.operation2"` in this case it will be applied to all context and user scopes.
 
 ### Unmarshal with changes
 
 Standard library deserialization will overwrite existing struct values only if the field is present in the input. Blaze does the same, but also can optionally provide you with `[]string` of changed fields. This can be useful for implementing `PATCH` requests, where you want to update only the fields that are present in the input.
+
+```go
+type UserRole struct {
+    Name string
+    Role string
+}
+
+type User struct {
+    ID int
+    Name string
+    Role UserRole
+    Field2 string
+    Field3 string
+}
+data := []byte(`{"name":"John","role":{"name":"John"}, "field2":"value2"}`)
+v := &User{}
+changes, err := blaze.UnmarshalWithChanges(data, &v)
+// v will be {Name: "John", Role: {Name: "John"}, Field2: "value2"}
+// changes will be ["name", "role", "role.name", "field2"]
+```
 
 ### Auto Camel Case
 

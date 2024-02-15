@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/deveox/blaze/types"
@@ -179,6 +180,7 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 		case TERMINATION_CHAR:
 			return d.Error("[Blaze decodeStruct()] unexpected end of input, expected object key or '}'")
 		default:
+			fmt.Println(d.pos, string(c))
 			return d.Error("[Blaze decodeStruct()] expected object key or '}'")
 		}
 		start := d.pos
@@ -196,26 +198,27 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 		d.SkipWhitespace()
 		field, embedded, ok := si.GetDecoderField(fName, d.ContextScope, d.OperationScope)
 		// fmt.Printf("\nfield %v %s %#v\n\n", ok, v.Type(), field)
-		if !ok {
+		if ok {
+			var fv reflect.Value
+			if embedded != nil {
+				fv = embedded.Value(v)
+			} else {
+				fv = v.Field(field.Idx)
+			}
+			if err := d.decode(fv); err != nil {
+				return err
+			}
+		} else {
+
 			err := d.Skip()
 			if err != nil {
 				return err
 			}
-			continue
 		}
 		// fmt.Println(1, string(d.Buf[d.pos:]))
-		var fv reflect.Value
-		if embedded != nil {
-			fv = embedded.Value(v)
-		} else {
-			fv = v.Field(field.Idx)
-		}
-		if err := d.decode(fv); err != nil {
-			return err
-		}
-		// fmt.Println(2, string(d.Buf[d.pos:]))
 		d.SkipWhitespace()
 		c = d.char(d.ptr, d.pos)
+		fmt.Println(d.pos, string(c), 2)
 		switch c {
 		case '}':
 			d.pos++

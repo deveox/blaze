@@ -2,7 +2,7 @@ package testdata
 
 type ScopedStruct struct {
 	Name       string
-	NoDB       bool `blaze:"no_db"`
+	NoDB       bool `blaze:"no-db"`
 	Read       bool `blaze:"read"`
 	ReadCreate bool `blaze:"read.create"`
 	ReadUpdate bool `blaze:"read.update"`

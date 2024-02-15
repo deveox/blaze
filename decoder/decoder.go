@@ -9,19 +9,11 @@ import (
 	"github.com/deveox/blaze/scopes"
 )
 
-func UnmarshalScoped(data []byte, v any, scopes scopes.Scopes) error {
+func UnmarshalScoped(data []byte, v any, context scopes.Context, scope scopes.Decoding) error {
 	t := NewDecoder(data)
 	defer decoderPool.Put(t)
-	t.ContextScope = scopes.Context
-	t.UserScope = scopes.User
-	t.OperationScope = scopes.Operation
-	return t.Decode(v)
-}
-
-func UnmarshalOperation(data []byte, v any, operation scopes.Operation) error {
-	t := NewDecoder(data)
-	defer decoderPool.Put(t)
-	t.OperationScope = operation
+	t.ContextScope = context
+	t.OperationScope = scope
 	return t.Decode(v)
 }
 
@@ -52,8 +44,7 @@ type Decoder struct {
 	pos            int64
 	start          int64
 	ContextScope   scopes.Context
-	UserScope      scopes.User
-	OperationScope scopes.Operation
+	OperationScope scopes.Decoding
 }
 
 func (t *Decoder) decode(v reflect.Value) error {

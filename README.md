@@ -23,10 +23,27 @@ type User struct {
     ID int `blaze:"http:read,client:-"`
     // This field is available as read/create only for clients. No context specific restrictions. No admin restrictions.
     Name string `blaze:"client:read.create"`
-    // This field is available as read-only for any user or context scope.
+    // This field is available as read-only for any user and http scope. DB scope is not affected.
     Role string `blaze:"read"`
 }
 ```
+
+Not all **Operations** are supported by all scopes. For example, DB scope support only `ignore` operation (a.k.a `-`). There's no reason to limit scope of operations in DB, because you always have a control over your database.
+
+| Scope  | Read | Write | Update | Create | Ignore (-) |
+| ------ | ---- | ----- | ------ | ------ | ---------- |
+| HTTP   | +    | +     | +      | +      | +          |
+| DB     | -    | -     | -      | -      | +          |
+| Admin  | +    | +     | +      | +      | +          |
+| Client | +    | +     | +      | +      | +          |
+
+| Operation | Tag      | Description                                                                           |
+| --------- | -------- | ------------------------------------------------------------------------------------- |
+| Read      | `read`   | Field is available for reading, usually applicable during Encoding                    |
+| Write     | `write`  | Field is available for writing, usually applicable during Decoding                    |
+| Update    | `update` | Field is available for updating, usually applicable during Decoding in PATCH handlers |
+| Create    | `create` | Field is available for creating, usually applicable during Decoding in POST handlers  |
+| Ignore    | `-`      | Field is ignored, applicable during both Encoding and Decoding                        |
 
 Tag format: `blaze:"scope:operation1.operation2"`, where `scope` is one of `http`, `db`, `admin`, `client` and operation is one of `read`, `write`, `update`, `create`, `-`. Optionally you can omit `scope`: `blaze:"operation1.operation2"` in this case it will be applied to all context and user scopes.
 

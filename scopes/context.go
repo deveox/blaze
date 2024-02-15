@@ -3,6 +3,7 @@ package scopes
 type Context int
 
 const (
-	CONTEXT_HTTP Context = iota
+	CONTEXT_ADMIN Context = iota
+	CONTEXT_CLIENT
 	CONTEXT_DB
 )

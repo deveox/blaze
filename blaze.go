@@ -10,12 +10,8 @@ func Unmarshal(data []byte, v interface{}) error {
 	return decoder.Unmarshal(data, v)
 }
 
-func UnmarshalScoped(data []byte, v any, scopes scopes.Scopes) error {
-	return decoder.UnmarshalScoped(data, v, scopes)
-}
-
-func UnmarshalOperation(data []byte, v any, operation scopes.Operation) error {
-	return decoder.UnmarshalOperation(data, v, operation)
+func UnmarshalScoped(data []byte, v any, context scopes.Context, scope scopes.Decoding) error {
+	return decoder.UnmarshalScoped(data, v, context, scope)
 }
 
 var DBDecoder = &decoder.Config{
@@ -23,15 +19,15 @@ var DBDecoder = &decoder.Config{
 }
 
 var ClientDecoder = &decoder.Config{
-	UserScope: scopes.USER_CLIENT,
+	ContextScope: scopes.CONTEXT_CLIENT,
 }
 
 func Marshal(v any) ([]byte, error) {
 	return encoder.Marshal(v)
 }
 
-func MarshalScoped(v any, scopes scopes.Scopes) ([]byte, error) {
-	return encoder.MarshalScoped(v, scopes)
+func MarshalScoped(v any, context scopes.Context) ([]byte, error) {
+	return encoder.MarshalScoped(v, context)
 }
 
 var DBEncoder = &encoder.Config{
@@ -39,5 +35,5 @@ var DBEncoder = &encoder.Config{
 }
 
 var ClientEncoder = &encoder.Config{
-	UserScope: scopes.USER_CLIENT,
+	ContextScope: scopes.CONTEXT_CLIENT,
 }

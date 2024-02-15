@@ -8,8 +8,6 @@ import (
 
 type Config struct {
 	ContextScope scopes.Context
-	UserScope    scopes.User
-	Operation    scopes.Operation
 	decoderPool  sync.Pool
 }
 
@@ -19,7 +17,7 @@ func (c *Config) Unmarshal(data []byte, v any) error {
 	return t.Decode(v)
 }
 
-func (c *Config) UnmarshalOperation(data []byte, v any, operation scopes.Operation) error {
+func (c *Config) UnmarshalScoped(data []byte, v any, operation scopes.Decoding) error {
 	t := c.NewDecoder(data)
 	defer c.decoderPool.Put(t)
 	t.OperationScope = operation
@@ -34,7 +32,6 @@ func (c *Config) NewDecoder(data []byte) *Decoder {
 	}
 	t := &Decoder{
 		ContextScope: c.ContextScope,
-		UserScope:    c.UserScope,
 	}
 	t.init(data)
 	return t

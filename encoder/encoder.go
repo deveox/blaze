@@ -17,12 +17,10 @@ func Marshal(v any) ([]byte, error) {
 	defer encoders.Put(e)
 	return e.Encode(v)
 }
-func MarshalScoped(v any, scopes scopes.Scopes) ([]byte, error) {
+func MarshalScoped(v any, context scopes.Context) ([]byte, error) {
 	e := NewEncoder()
 	defer encoders.Put(e)
-	e.ContextScope = scopes.Context
-	e.UserScope = scopes.User
-	e.OperationScope = scopes.Operation
+	e.ContextScope = context
 	return e.Encode(v)
 }
 
@@ -31,8 +29,6 @@ func NewEncoder() *Encoder {
 		e := v.(*Encoder)
 		e.bytes = e.bytes[:0]
 		e.ContextScope = 0
-		e.UserScope = 0
-		e.OperationScope = 0
 		return e
 	}
 	return &Encoder{bytes: make([]byte, 0, 2048)}
@@ -45,11 +41,9 @@ const MAX_DEPTH = 1000
 type Encoder struct {
 	bytes []byte
 
-	ContextScope   scopes.Context
-	UserScope      scopes.User
-	OperationScope scopes.Operation
-	depth          int
-	anonymous      bool
+	ContextScope scopes.Context
+	depth        int
+	anonymous    bool
 }
 
 func (e *Encoder) Encode(v any) ([]byte, error) {
@@ -238,7 +232,7 @@ func (e *Encoder) EncodeStruct(v reflect.Value) error {
 	si, _ := types.Cache.Get(t)
 
 	for _, fi := range si.Fields {
-		ok := fi.CheckScope(e.ContextScope, e.UserScope, e.OperationScope)
+		ok := fi.CheckEncoderScope(e.ContextScope)
 		if !ok {
 			continue
 		}

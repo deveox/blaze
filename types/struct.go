@@ -34,24 +34,38 @@ type Struct struct {
 	EmbeddedFields []*EmbeddedField
 }
 
-func (c *Struct) GetField(name string, context scopes.Context, user scopes.User, operation scopes.Operation) (*Field, *EmbeddedField, bool) {
+func (c *Struct) GetField(name string) (*Field, *EmbeddedField, bool) {
+	for _, f := range c.Fields {
+		if f.Name == name {
+			return f, nil, true
+		}
+	}
+	for _, f := range c.EmbeddedFields {
+		if f.Field.Name == name {
+			return f.Field, f, true
+		}
+	}
+	return nil, nil, false
+}
+
+func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scopes.Decoding) (*Field, *EmbeddedField, bool) {
 	for _, f := range c.Fields {
 		if f.Name == name {
 
-			return f, nil, f.CheckScope(context, user, operation)
+			return f, nil, f.CheckDecoderScope(context, scope)
 		}
 	}
 
 	for _, f := range c.EmbeddedFields {
 		if f.Field.Name == name {
-			return f.Field, f, f.Field.CheckScope(context, user, operation)
+			return f.Field, f, f.Field.CheckDecoderScope(context, scope)
 		}
 	}
 	return nil, nil, false
 }
 
 func NewStruct(t reflect.Type) (*Struct, error) {
-
+	fmt.Println("new", t)
 	s := &Struct{
 		Type: t,
 	}

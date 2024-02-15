@@ -11,8 +11,7 @@ type Field struct {
 	Name      string
 	ObjectKey []byte
 
-	HTTPScope   Operation
-	DBScope     Operation
+	DB          bool
 	ClientScope Operation
 	AdminScope  Operation
 
@@ -23,61 +22,40 @@ type Field struct {
 	Idx       int
 }
 
-func (f *Field) CheckScope(context scopes.Context, user scopes.User, operation scopes.Operation) bool {
-	if context == scopes.CONTEXT_DB {
-		ok := f.CheckOperationScope(operation, f.DBScope)
-		if !ok {
-			return false
-		}
-	} else {
-		ok := f.CheckOperationScope(operation, f.HTTPScope)
-		if !ok {
-			return false
-		}
+func (f *Field) CheckEncoderScope(context scopes.Context) bool {
+	switch context {
+	case scopes.CONTEXT_DB:
+		return f.DB
+	case scopes.CONTEXT_CLIENT:
+		return f.ClientScope.CanRead()
+	case scopes.CONTEXT_ADMIN:
+		return f.AdminScope.CanRead()
 	}
-	if user == scopes.USER_CLIENT {
-		return f.CheckOperationScope(operation, f.ClientScope)
-	}
-	return f.CheckOperationScope(operation, f.AdminScope)
+	return false
 }
 
-func (f *Field) CheckOperationScope(scope scopes.Operation, op Operation) bool {
-	switch scope {
-	case scopes.OPERATION_READ:
-		switch op {
-		case OPERATION_READ, OPERATION_READ_CREATE, OPERATION_READ_UPDATE, OPERATION_ALL:
-			return true
-		}
-		return false
-	case scopes.OPERATION_WRITE:
-		switch op {
-		case OPERATION_WRITE, OPERATION_ALL:
-			return true
-		}
-		return false
-	case scopes.OPERATION_CREATE:
-		switch op {
-		case OPERATION_CREATE, OPERATION_READ_CREATE, OPERATION_ALL, OPERATION_WRITE:
-			return true
-		}
-		return false
-	case scopes.OPERATION_UPDATE:
-		switch op {
-		case OPERATION_UPDATE, OPERATION_READ_UPDATE, OPERATION_ALL, OPERATION_WRITE:
-			return true
-		}
-		return false
-	default:
-		return true
+func (f *Field) CheckDecoderScope(context scopes.Context, scope scopes.Decoding) bool {
+	switch context {
+	case scopes.CONTEXT_DB:
+		return f.DB
+	case scopes.CONTEXT_CLIENT:
+		return f.ClientScope.CanWrite(scope)
+	case scopes.CONTEXT_ADMIN:
+		return f.AdminScope.CanWrite(scope)
 	}
+	return false
 }
 
-func (f *Field) ParseTag(st reflect.StructTag) bool {
-	jsonTag := st.Get(TAG)
-	tag := st.Get(TAG_BLAZE)
+func (f *Field) ParseTag(st reflect.StructTag) {
+	jsonTag := st.Get(TAG_NAME_JSON)
+	tag := st.Get(TAG_NAME_BLAZE)
 	if jsonTag == "-" || tag == "-" {
-		return false
+		f.ClientScope = OPERATION_IGNORE
+		f.AdminScope = OPERATION_IGNORE
+		f.DB = false
+		return
 	}
+	f.DB = true
 	f.Name, _, _ = strings.Cut(jsonTag, ",")
 loop:
 	for {
@@ -86,10 +64,15 @@ loop:
 		switch v {
 		case "":
 			break loop
-		case "keep":
+		case TAG_KEEP:
 			f.KeepEmpty = true
 		case "omit":
 			f.KeepEmpty = false
+		case TAG_NO_DB:
+			f.DB = false
+		case TAG_NO_HTTP:
+			f.ClientScope = OPERATION_IGNORE
+			f.AdminScope = OPERATION_IGNORE
 		default:
 			s, after, _ := strings.Cut(v, ":")
 			switch s {
@@ -97,16 +80,11 @@ loop:
 				f.ClientScope = tagPartToOperation(after)
 			case TAG_SCOPE_ADMIN:
 				f.AdminScope = tagPartToOperation(after)
-			case TAG_SCOPE_DB:
-				f.DBScope = tagPartToOperation(after)
-			case TAG_SCOPE_HTTP:
-				f.HTTPScope = tagPartToOperation(after)
 			default:
 				sc := tagPartToOperation(s)
 				f.ClientScope = sc
 				f.AdminScope = sc
-				f.DBScope = sc
-				f.HTTPScope = sc
+
 			}
 			continue
 		}
@@ -114,5 +92,4 @@ loop:
 			break
 		}
 	}
-	return true
 }

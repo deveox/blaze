@@ -1,27 +1,51 @@
 package types
 
+import "github.com/deveox/blaze/scopes"
+
 type Operation int
+
+func (s Operation) CanRead() bool {
+	switch s {
+	case OPERATION_READ, OPERATION_READ_CREATE, OPERATION_READ_UPDATE, OPERATION_ALL:
+		return true
+	}
+	return false
+}
+
+func (s Operation) CanWrite(scope scopes.Decoding) bool {
+	switch s {
+	case OPERATION_ALL, OPERATION_WRITE:
+		return true
+	case OPERATION_CREATE, OPERATION_READ_CREATE:
+		return scope == scopes.DECODE_CREATE || scope == scopes.DECODE_ANY
+	case OPERATION_UPDATE, OPERATION_READ_UPDATE:
+		return scope == scopes.DECODE_UPDATE || scope == scopes.DECODE_ANY
+	default:
+		return false
+	}
+}
 
 func (s Operation) String() string {
 	switch s {
 	case OPERATION_ALL:
-		return "all scopes"
+		return "all operations"
 	case OPERATION_READ:
-		return "read scope"
+		return "read operation"
 	case OPERATION_WRITE:
-		return "write scope"
+		return "write operation"
 	case OPERATION_CREATE:
-		return "create scope"
+		return "create operation"
 	case OPERATION_READ_CREATE:
-		return "read and create scope"
+		return "read and create operation"
 	case OPERATION_UPDATE:
-		return "update scope"
+		return "update operation"
 	case OPERATION_READ_UPDATE:
-		return "read and update scope"
+		return "read and update operation"
+	case OPERATION_IGNORE:
+		return "no operation"
 	default:
 		return "unknown scope"
 	}
-
 }
 
 const (
@@ -32,4 +56,5 @@ const (
 	OPERATION_READ_CREATE
 	OPERATION_UPDATE
 	OPERATION_READ_UPDATE
+	OPERATION_IGNORE
 )

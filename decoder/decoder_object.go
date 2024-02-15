@@ -194,7 +194,7 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 		}
 		d.pos++
 		d.SkipWhitespace()
-		field, embedded, ok := si.GetField(fName, d.ContextScope, d.UserScope, d.OperationScope)
+		field, embedded, ok := si.GetDecoderField(fName, d.ContextScope, d.OperationScope)
 		// fmt.Printf("\nfield %v %s %#v\n\n", ok, v.Type(), field)
 		if !ok {
 			err := d.Skip()

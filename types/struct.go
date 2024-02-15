@@ -64,22 +64,23 @@ func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scop
 	return nil, nil, false
 }
 
-func NewStruct(t reflect.Type) (*Struct, error) {
-	fmt.Println("new", t)
-	s := &Struct{
+func NewStruct(t reflect.Type) *Struct {
+	return &Struct{
 		Type: t,
 	}
-	fmt.Println("init", t)
-	n := t.NumField()
+}
+
+func (s *Struct) init() error {
+	n := s.Type.NumField()
 	s.Fields = make([]*Field, 0, n)
 	for i := 0; i < n; i++ {
-		f := t.Field(i)
+		f := s.Type.Field(i)
 		err := s.initField(f)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return s, nil
+	return nil
 }
 
 func (c *Struct) initField(f reflect.StructField) error {

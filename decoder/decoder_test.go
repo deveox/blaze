@@ -42,3 +42,23 @@ func UnmarshalNull[T any](t *testing.T, byDefault T) {
 	var expected T
 	require.Equal(t, expected, v)
 }
+
+type WithChangesNested struct {
+	Name   string
+	Age    int
+	Nested *WithChanges
+}
+type WithChanges struct {
+	Name   string
+	Age    int
+	Nested *WithChangesNested
+}
+
+func TestUnmarshal_WithChanges(t *testing.T) {
+	data := []byte(`{"name":"test","age":10,"nested":{"name":"test","nested":{"name":"test","age":10}}}`)
+	var v WithChanges
+	changes, err := UnmarshalWithChanges(data, &v)
+	require.NoError(t, err)
+	require.Equal(t, []string{"name", "age", "nested", "nested.name", "nested.nested", "nested.nested.name", "nested.nested.age"}, changes)
+
+}

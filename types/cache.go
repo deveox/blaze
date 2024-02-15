@@ -31,12 +31,10 @@ func (c *cache) load(t reflect.Type) (value *Struct, ok bool) {
 
 func (c *cache) store(t reflect.Type) (*Struct, error) {
 	t = mirror.DerefType(t)
-	v, err := NewStruct(t)
-	if err != nil {
-		return nil, err
-	}
+	v := NewStruct(t)
 	c.m.Store(t, v)
-	return v, nil
+	err := v.init()
+	return v, err
 }
 
 var Cache = &cache{}

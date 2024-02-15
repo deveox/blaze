@@ -17,10 +17,33 @@ func UnmarshalScoped(data []byte, v any, context scopes.Context, scope scopes.De
 	return t.Decode(v)
 }
 
+func UnmarshalScopedWithChanges(data []byte, v any, context scopes.Context, scope scopes.Decoding) ([]string, error) {
+	t := NewDecoder(data)
+	defer decoderPool.Put(t)
+	t.ContextScope = context
+	t.OperationScope = scope
+	t.Changes = make([]string, 0, 10)
+	err := t.Decode(v)
+	changes := t.Changes
+	t.Changes = nil
+	return changes, err
+}
+
 func Unmarshal(data []byte, v any) error {
 	t := NewDecoder(data)
 	defer decoderPool.Put(t)
 	return t.Decode(v)
+}
+
+func UnmarshalWithChanges(data []byte, v any) ([]string, error) {
+	t := NewDecoder(data)
+	defer decoderPool.Put(t)
+	t.Changes = make([]string, 0, 10)
+	err := t.Decode(v)
+	changes := t.Changes
+	t.Changes = nil
+	return changes, err
+
 }
 
 func NewDecoder(data []byte) *Decoder {
@@ -37,18 +60,21 @@ func NewDecoder(data []byte) *Decoder {
 // In order to decode, you have to traverse the input buffer character by position. At that time, if you check whether the buffer has reached the end, it will be very slow.
 // Therefore, by adding the NUL (\000) character to the end of the read buffer as shown below, it is possible to check the termination character at the same time as other characters.
 const TERMINATION_CHAR = '\000'
+const MAX_DEPTH = 1000
 
 type Decoder struct {
+	depth          int
 	Buf            []byte
 	ptr            unsafe.Pointer
 	pos            int64
 	start          int64
 	ContextScope   scopes.Context
 	OperationScope scopes.Decoding
+	Changes        []string
+	ChangesPrefix  string
 }
 
 func (t *Decoder) decode(v reflect.Value) error {
-
 	fn, err := Decoders.Get(v)
 	if err != nil {
 		return err
@@ -70,8 +96,16 @@ func (t *Decoder) nativeDecoder(v reflect.Value) error {
 		t.Skip()
 		return t.decodeNull(v)
 	case '[':
+		t.depth++
+		if t.depth > MAX_DEPTH {
+			return t.Error("[Blaze decode()] maximum depth reached")
+		}
 		return t.decodeArrayOrSlice(v)
 	case '{':
+		t.depth++
+		if t.depth > MAX_DEPTH {
+			return t.Error("[Blaze decode()] maximum depth reached")
+		}
 		return t.decodeObject(v)
 	case TERMINATION_CHAR:
 		return t.Error("[Blaze decode()] unexpected end of input, expected beginning of value")
@@ -104,8 +138,16 @@ func (t *Decoder) Skip() error {
 		case ' ', '\t', '\n', '\r':
 			t.pos++
 		case '{':
+			t.depth++
+			if t.depth > MAX_DEPTH {
+				return t.Error("[Blaze decode()] maximum depth reached")
+			}
 			return t.SkipObject()
 		case '[':
+			t.depth++
+			if t.depth > MAX_DEPTH {
+				return t.Error("[Blaze decode()] maximum depth reached")
+			}
 			return t.SkipArray()
 		case '"':
 			return t.SkipString()
@@ -156,6 +198,7 @@ func (d *Decoder) init(data []byte) {
 	d.ptr = unsafe.Pointer(unsafe.SliceData(d.Buf))
 	d.pos = 0
 	d.start = 0
+	d.depth = 0
 }
 
 func (t *Decoder) Error(msg string) error {

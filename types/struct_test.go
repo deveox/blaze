@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -64,9 +63,7 @@ type TestStruct struct {
 
 func TestNewStruct(t *testing.T) {
 	typ := reflect.TypeOf(TestStruct{})
-	fmt.Println(1)
 	s, err := Cache.Get(typ)
-	fmt.Println(2)
 	require.NoError(t, err)
 
 	f, ef, ok := s.GetField("name")

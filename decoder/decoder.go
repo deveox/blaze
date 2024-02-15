@@ -151,13 +151,17 @@ func (t *Decoder) Skip() error {
 			if t.depth > MAX_DEPTH {
 				return t.Error("[Blaze decode()] maximum depth reached")
 			}
-			return t.SkipObject()
+			err := t.SkipObject()
+			t.depth--
+			return err
 		case '[':
 			t.depth++
 			if t.depth > MAX_DEPTH {
 				return t.Error("[Blaze decode()] maximum depth reached")
 			}
-			return t.SkipArray()
+			err := t.SkipArray()
+			t.depth--
+			return err
 		case '"':
 			return t.SkipString()
 		case 't':

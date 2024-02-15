@@ -49,6 +49,7 @@ func (t *Decoder) SkipObject() error {
 			}
 		case '}':
 			level--
+			t.depth--
 			if level == 0 {
 				t.pos++
 				return nil

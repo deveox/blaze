@@ -11,9 +11,11 @@ func (t *Decoder) SkipArray() error {
 		c := t.char(t.ptr, t.pos)
 		switch c {
 		case '[':
+			t.depth++
 			level++
 		case ']':
 			level--
+			t.depth--
 			if level == 0 {
 				t.pos++
 				return nil

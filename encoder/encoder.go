@@ -369,6 +369,8 @@ func AddIndent(b []byte) []byte {
 			res = append(res, '\n')
 
 			res = append(res, b[i])
+		} else if b[i] == ',' {
+			res = append(res, b[i], '\n')
 		} else {
 			res = append(res, b[i])
 		}

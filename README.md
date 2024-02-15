@@ -11,7 +11,7 @@ It's not a drop-in replacement for standard library, though migration shouldn't 
 Blaze has 3 scopes:
 
 - **Context** - `HTTP` or `DB`. To define different behavior for your handlers/router (HTTP) and database (e.g. PostgreSQL, MongoDB)
-- **User** - `Admin` or `Client`. To define different behavior for different user types. Handy if you want to have same moodels for your /admin and /public API endpoints.
+- **User** - `Admin` or `Client`. To define different behavior for different user types. Handy if you want to have same models for your /admin and /public API endpoints.
 - **Operation** - `Read`, `Write`, `Update`, `Create`. To define different behavior for different operations. E.g. you may want to allow clients to read some fields, but not to update them. It can help you to dramatically decrease the amount of code in your handlers.
 
 Example:

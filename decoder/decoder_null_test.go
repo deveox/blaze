@@ -36,3 +36,11 @@ func TestDecode_Null(t *testing.T) {
 	}
 	require.Equal(t, &A{}, v2)
 }
+
+func TestDecode_Null_Slice(t *testing.T) {
+	data := []byte(`[null, null, null]`)
+	var v []int
+	err := Unmarshal(data, &v)
+	require.NoError(t, err)
+	require.Equal(t, []int{0, 0, 0}, v)
+}

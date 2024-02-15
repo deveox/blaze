@@ -24,6 +24,7 @@ func (t *Decoder) SkipNull() error {
 	if c != 'l' {
 		return t.ErrorF("[Blaze SkipNull()] invalid char, expected 'null'")
 	}
+	t.pos++
 	return nil
 }
 

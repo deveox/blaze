@@ -14,6 +14,10 @@ func UnmarshalScoped(data []byte, v any, context scopes.Context, scope scopes.De
 	return decoder.UnmarshalScoped(data, v, context, scope)
 }
 
+func UnmarshalScopedWithChanges(data []byte, v any, context scopes.Context, scope scopes.Decoding) ([]string, error) {
+	return decoder.UnmarshalScopedWithChanges(data, v, context, scope)
+}
+
 var DBDecoder = &decoder.Config{
 	ContextScope: scopes.CONTEXT_DB,
 }

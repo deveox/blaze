@@ -83,6 +83,15 @@ func customDecoder[T any](fn CustomFn[T]) decoderFunc {
 		if err != nil {
 			return err
 		}
+		for v.Kind() == reflect.Ptr {
+			if v.Type().Name() == "" {
+				break
+			}
+			if v.IsNil() {
+				v.Set(reflect.New(v.Type().Elem()))
+			}
+			v = v.Elem()
+		}
 		v.Set(reflect.ValueOf(val))
 		return nil
 	}

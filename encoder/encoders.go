@@ -62,6 +62,16 @@ type CustomFn[T any] func(d *Encoder, v T) ([]byte, error)
 
 func customEncoder[T any](fn CustomFn[T]) encoderFunc {
 	return func(e *Encoder, v reflect.Value) error {
+		for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
+			if v.Type().Name() != "" {
+				break
+			}
+			if v.IsNil() {
+				e.bytes = append(e.bytes, "null"...)
+				return nil
+			}
+			v = v.Elem()
+		}
 		if v.CanInterface() {
 			b, err := fn(e, v.Interface().(T))
 			if err != nil {

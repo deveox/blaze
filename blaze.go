@@ -18,6 +18,14 @@ func UnmarshalScopedWithChanges(data []byte, v any, context scopes.Context, scop
 	return decoder.UnmarshalScopedWithChanges(data, v, context, scope)
 }
 
+func RegisterDecoder[T any](value T, fn decoder.CustomFn[T]) {
+	decoder.RegisterDecoder(value, fn)
+}
+
+func RegisterUnmarshaler(value any) {
+	decoder.RegisterUnmarshaler(value)
+}
+
 var DBDecoder = &decoder.Config{
 	ContextScope: scopes.CONTEXT_DB,
 }
@@ -48,4 +56,12 @@ var ClientEncoder = &encoder.Config{
 
 var AdminEncoder = &encoder.Config{
 	ContextScope: scopes.CONTEXT_ADMIN,
+}
+
+func RegisterEncoder[T any](value T, fn encoder.CustomFn[T]) {
+	encoder.RegisterEncoder(value, fn)
+}
+
+func RegisterMarshaler(value any) {
+	encoder.RegisterMarshaler(value)
 }

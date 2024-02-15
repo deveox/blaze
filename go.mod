@@ -3,7 +3,7 @@ module github.com/deveox/blaze
 go 1.21.4
 
 require (
-	github.com/deveox/gu v0.1.1
+	github.com/deveox/gu v0.2.0
 	github.com/francoispqt/gojay v1.2.13
 	github.com/goccy/go-json v0.10.2
 	github.com/json-iterator/go v1.1.12

@@ -2,6 +2,7 @@ package encoder
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"reflect"
 )
 
@@ -18,9 +19,21 @@ func encodeByteSlice(e *Encoder, v reflect.Value) error {
 	return nil
 }
 
+func encodeRawMessage(e *Encoder, v reflect.Value) error {
+	if v.IsNil() {
+		e.WriteString("null")
+		return nil
+	}
+	e.bytes = append(e.bytes, v.Bytes()...)
+	return nil
+}
+
 func newSliceEncoder(t reflect.Type) EncoderFn {
 	// Byte slices get special treatment; arrays don't.
 	if t.Elem() == reflect.TypeFor[byte]() {
+		if t == reflect.TypeFor[json.RawMessage]() {
+			return encodeRawMessage
+		}
 		return encodeByteSlice
 	}
 	return newArrayEncoder(t)

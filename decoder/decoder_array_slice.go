@@ -2,6 +2,7 @@ package decoder
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"reflect"
 )
 
@@ -69,6 +70,9 @@ func (d *Decoder) decodeSlice(v reflect.Value, elemDecoder DecoderFn) error {
 
 func newSliceDecoder(t reflect.Type) DecoderFn {
 	if t.Elem() == reflect.TypeFor[byte]() {
+		if t == reflect.TypeFor[json.RawMessage]() {
+			return decodeRawMessage
+		}
 		return decodeBytes
 	}
 	elemDecoder := newDecoderFn(t.Elem(), true)
@@ -94,5 +98,16 @@ func decodeBytes(d *Decoder, v reflect.Value) error {
 		return err
 	}
 	v.SetBytes(res[:n])
+	return nil
+}
+
+func decodeRawMessage(d *Decoder, v reflect.Value) error {
+	d.SkipWhitespace()
+	start := d.pos
+	err := d.Skip()
+	if err != nil {
+		return err
+	}
+	v.SetBytes(d.Buf[start:d.pos])
 	return nil
 }

@@ -78,50 +78,44 @@ func (d *Decoder) SkipWhitespace() {
 }
 
 func (d *Decoder) Skip() error {
-	for {
-		c := d.char()
-		switch c {
-		case ' ', '\t', '\n', '\r':
-			d.pos++
-		case '{':
-			if d.depth > MAX_DEPTH {
-				return d.Error("[Blaze decode()] maximum depth reached")
-			}
-			err := d.SkipObject()
-			d.depth--
-			return err
-		case '[':
-			if d.depth > MAX_DEPTH {
-				return d.Error("[Blaze decode()] maximum depth reached")
-			}
-			err := d.SkipArray()
-			d.depth--
-			return err
-		case '"':
-			return d.SkipString()
-		case 't':
-			d.pos++
-			return d.SkipTrue()
-		case 'f':
-			d.pos++
-			return d.SkipFalse()
-		case 'n':
-			return d.ScanNull()
-		case '0':
-			d.start = d.pos
-			return d.SkipZero(true)
-		case '-':
-			d.start = d.pos
-			return d.SkipMinus(true)
-		case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			d.start = d.pos
-			return d.SkipNumber(true, true)
-		case TERMINATION_CHAR:
-			return d.Error("[Blaze Skip()] unexpected end of input, expected beginning of value")
-		default:
-			return d.Error("[Blaze Skip()] invalid char, expected beginning of value")
+	d.SkipWhitespace()
+	var err error
+	start := d.pos
+	c := d.char()
+	switch c {
+	case '{':
+		if d.depth > MAX_DEPTH {
+			return d.Error("[Blaze decode()] maximum depth reached")
 		}
+		err = d.SkipObject()
+		d.depth--
+	case '[':
+		if d.depth > MAX_DEPTH {
+			return d.Error("[Blaze decode()] maximum depth reached")
+		}
+		err = d.SkipArray()
+		d.depth--
+	case '"':
+		err = d.SkipString()
+	case 't':
+		err = d.SkipTrue()
+	case 'f':
+		err = d.SkipFalse()
+	case 'n':
+		err = d.ScanNull()
+	case '0':
+		err = d.SkipZero(true)
+	case '-':
+		err = d.SkipMinus(true)
+	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		err = d.SkipNumber(true, true)
+	case TERMINATION_CHAR:
+		return d.Error("[Blaze Skip()] unexpected end of input, expected beginning of value")
+	default:
+		return d.Error("[Blaze Skip()] invalid char, expected beginning of value")
 	}
+	d.start = start
+	return err
 }
 
 func (d *Decoder) init(data []byte) {

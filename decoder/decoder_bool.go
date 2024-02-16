@@ -3,7 +3,7 @@ package decoder
 import "reflect"
 
 func (d *Decoder) SkipTrue() error {
-	d.start = d.pos - 1
+	d.pos++
 
 	c := d.char()
 	if c != 'r' {
@@ -24,8 +24,7 @@ func (d *Decoder) SkipTrue() error {
 }
 
 func (d *Decoder) SkipFalse() error {
-	d.start = d.pos - 1
-
+	d.pos++
 	c := d.char()
 	if c != 'a' {
 		return d.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
@@ -61,7 +60,6 @@ func decodeBool(d *Decoder, v reflect.Value) error {
 		v.SetBool(false)
 		return nil
 	case 't':
-		d.pos++
 		err := d.SkipTrue()
 		if err != nil {
 			return err
@@ -69,7 +67,6 @@ func decodeBool(d *Decoder, v reflect.Value) error {
 		v.SetBool(true)
 		return nil
 	case 'f':
-		d.pos++
 		err := d.SkipFalse()
 		if err != nil {
 			return err

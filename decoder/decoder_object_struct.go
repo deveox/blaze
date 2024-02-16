@@ -79,22 +79,26 @@ func (d *Decoder) decodeStruct(v reflect.Value, si *types.Struct) error {
 			if embedded != nil {
 				fv = embedded.Value(v)
 			} else {
-				if d.Changes != nil {
-					if prefix == "" {
-						d.ChangesPrefix = fName
-					} else {
-						d.ChangesPrefix = fmt.Sprintf("%s.%s", prefix, fName)
-					}
-				}
 				fv = v.Field(field.Idx)
+			}
+			if d.Changes != nil {
+				if prefix == "" {
+					d.ChangesPrefix = field.Name
+				} else {
+					d.ChangesPrefix = fmt.Sprintf("%s.%s", prefix, field.Name)
+				}
+				d.Changes = append(d.Changes, d.ChangesPrefix)
 			}
 			oldLen := len(d.Changes)
 			if err := d.decode(fv); err != nil {
 				return err
 			}
-			if field.Struct != nil && embedded == nil && len(d.Changes) > oldLen {
-				d.Changes = append(d.Changes, d.ChangesPrefix)
+			if field.Struct != nil {
+				if len(d.Changes) == oldLen && len(d.Changes) > 0 {
+					d.Changes = d.Changes[:len(d.Changes)-1]
+				}
 			}
+
 		} else {
 			err := d.Skip()
 			if err != nil {

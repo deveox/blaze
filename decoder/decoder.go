@@ -129,6 +129,8 @@ func (d *Decoder) init(data []byte) {
 	d.pos = 0
 	d.start = 0
 	d.operation = 0
+	d.ChangesPrefix = ""
+	d.Changes = d.Changes[:0]
 	d.depth = 0
 }
 

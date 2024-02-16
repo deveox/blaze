@@ -9,19 +9,17 @@ import (
 	"github.com/deveox/blaze/scopes"
 )
 
-func UnmarshalScoped(data []byte, v any, context scopes.Context, scope scopes.Decoding) error {
+func UnmarshalScoped(data []byte, v any, scope scopes.Decoding) error {
 	t := NewDecoder(data)
 	defer decoderPool.Put(t)
-	t.ContextScope = context
-	t.OperationScope = scope
+	t.operationScope = scope
 	return t.Decode(v)
 }
 
-func UnmarshalScopedWithChanges(data []byte, v any, context scopes.Context, scope scopes.Decoding) ([]string, error) {
+func UnmarshalScopedWithChanges(data []byte, v any, scope scopes.Decoding) ([]string, error) {
 	t := NewDecoder(data)
 	defer decoderPool.Put(t)
-	t.ContextScope = context
-	t.OperationScope = scope
+	t.operationScope = scope
 	t.Changes = make([]string, 0, 10)
 	err := t.Decode(v)
 	changes := t.Changes
@@ -68,135 +66,90 @@ type Decoder struct {
 	ptr            unsafe.Pointer
 	pos            int64
 	start          int64
-	ContextScope   scopes.Context
-	OperationScope scopes.Decoding
+	contextScope   scopes.Context
+	operationScope scopes.Decoding
 	Changes        []string
 	ChangesPrefix  string
 }
 
-func (t *Decoder) decode(v reflect.Value) error {
-	fn, err := Decoders.Get(v)
-	if err != nil {
-		return err
-	}
-	return fn(t, v)
-}
-func (t *Decoder) nativeDecoder(v reflect.Value) error {
-	c := t.char(t.ptr, t.pos)
-	switch c {
-	case '"':
-		return t.decodeString(v)
-	case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-':
-		err := t.Skip()
-		if err != nil {
-			return err
-		}
-		return t.decodeNumber(v)
-	case 't', 'f':
-		err := t.Skip()
-		if err != nil {
-			return err
-		}
-		return t.decodeBool(v)
-	case 'n':
-		err := t.Skip()
-		if err != nil {
-			return err
-		}
-		return t.decodeNull(v)
-	case '[':
-		t.depth++
-		if t.depth > MAX_DEPTH {
-			return t.Error("[Blaze decode()] maximum depth reached")
-		}
-		return t.decodeArrayOrSlice(v)
-	case '{':
-		t.depth++
-		if t.depth > MAX_DEPTH {
-			return t.Error("[Blaze decode()] maximum depth reached")
-		}
-		return t.decodeObject(v)
-	case TERMINATION_CHAR:
-		return t.Error("[Blaze decode()] unexpected end of input, expected beginning of value")
-	default:
-		return t.Error("[Blaze decode()] invalid char, expected beginning of value")
-	}
+func (d *Decoder) Context() scopes.Context {
+	return d.contextScope
 }
 
-func (t *Decoder) Decode(v any) error {
+func (d *Decoder) Operation() scopes.Decoding {
+	return d.operationScope
+}
+
+func (d *Decoder) decode(v reflect.Value) error {
+	return getDecoderFn(v.Type())(d, v)
+}
+
+func (d *Decoder) Decode(v any) error {
 	rv := reflect.ValueOf(v)
-	return t.decode(rv)
+	if !rv.IsValid() {
+		return d.Error("[Blaze decode()] can't decode to nil value")
+	}
+	if rv.Kind() != reflect.Pointer {
+		return d.ErrorF("[Blaze decode()] can't decode to non-pointer value '%s'", rv.Type())
+	}
+	return d.decode(rv)
 }
 
-func (t *Decoder) SkipWhitespace() {
+func (d *Decoder) SkipWhitespace() {
 	for {
-		c := t.char(t.ptr, t.pos)
+		c := d.char()
 		switch c {
 		case ' ', '\t', '\n', '\r':
-			t.pos++
+			d.pos++
 		default:
 			return
 		}
 	}
 }
 
-func (t *Decoder) Skip() error {
+func (d *Decoder) Skip() error {
 	for {
-		c := t.char(t.ptr, t.pos)
+		c := d.char()
 		switch c {
 		case ' ', '\t', '\n', '\r':
-			t.pos++
+			d.pos++
 		case '{':
-			t.depth++
-			if t.depth > MAX_DEPTH {
-				return t.Error("[Blaze decode()] maximum depth reached")
+			if d.depth > MAX_DEPTH {
+				return d.Error("[Blaze decode()] maximum depth reached")
 			}
-			err := t.SkipObject()
-			t.depth--
+			err := d.SkipObject()
+			d.depth--
 			return err
 		case '[':
-			t.depth++
-			if t.depth > MAX_DEPTH {
-				return t.Error("[Blaze decode()] maximum depth reached")
+			if d.depth > MAX_DEPTH {
+				return d.Error("[Blaze decode()] maximum depth reached")
 			}
-			err := t.SkipArray()
-			t.depth--
+			err := d.SkipArray()
+			d.depth--
 			return err
 		case '"':
-			return t.SkipString()
+			return d.SkipString()
 		case 't':
-			t.pos++
-			return t.SkipTrue()
+			d.pos++
+			return d.SkipTrue()
 		case 'f':
-			t.pos++
-			return t.SkipFalse()
+			d.pos++
+			return d.SkipFalse()
 		case 'n':
-			return t.SkipNull()
+			return d.ScanNull()
 		case '0':
-			t.start = t.pos
-			return t.SkipZero()
+			d.start = d.pos
+			return d.SkipZero(true)
 		case '-':
-			t.start = t.pos
-			t.pos++
-			c := t.char(t.ptr, t.pos)
-			switch c {
-			case '0':
-				return t.SkipZero()
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				t.pos++
-				return t.SkipAnyNumber()
-			default:
-				return t.Error("[Blaze Skip()] invalid char, expected number")
-			}
-
+			d.start = d.pos
+			return d.SkipMinus(true)
 		case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			t.start = t.pos
-			t.pos++
-			return t.SkipAnyNumber()
+			d.start = d.pos
+			return d.SkipNumber(true, true)
 		case TERMINATION_CHAR:
-			return t.Error("[Blaze Skip()] unexpected end of input, expected beginning of value")
+			return d.Error("[Blaze Skip()] unexpected end of input, expected beginning of value")
 		default:
-			return t.Error("[Blaze Skip()] invalid char, expected beginning of value")
+			return d.Error("[Blaze Skip()] invalid char, expected beginning of value")
 		}
 	}
 }
@@ -211,13 +164,14 @@ func (d *Decoder) init(data []byte) {
 	d.ptr = unsafe.Pointer(unsafe.SliceData(d.Buf))
 	d.pos = 0
 	d.start = 0
+	d.operationScope = 0
 	d.depth = 0
 }
 
-func (t *Decoder) Error(msg string) error {
+func (d *Decoder) Error(msg string) error {
 	e := &Error{
 		Message: msg,
-		Offset:  int(t.pos),
+		Offset:  int(d.pos),
 	}
 	areaStart := e.Offset - 20
 	if areaStart < 0 {
@@ -227,23 +181,23 @@ func (t *Decoder) Error(msg string) error {
 		e.AreaPos = 20
 	}
 	areaEnd := e.Offset + 20
-	if areaEnd > len(t.Buf) {
-		areaEnd = len(t.Buf)
+	if areaEnd > len(d.Buf) {
+		areaEnd = len(d.Buf)
 	}
-	e.Area = t.Buf[areaStart:areaEnd]
+	e.Area = d.Buf[areaStart:areaEnd]
 	return e
 }
 
-func (t *Decoder) ErrorF(format string, args ...any) error {
+func (d *Decoder) ErrorF(format string, args ...any) error {
 	msg := fmt.Sprintf(format, args...)
-	return t.Error(msg)
+	return d.Error(msg)
 }
 
 // char returns the byte at the given offset from the given pointer.
 // it's similar to d.Buf[offset], but even though d.Buf[offset] never causes out-of-range access (because of the TERMINATION_CHAR),
 // the compiler doesn't know that, so it can't optimize the bounds check away.
-func (d *Decoder) char(ptr unsafe.Pointer, offset int64) byte {
-	return *(*byte)(unsafe.Pointer(uintptr(ptr) + uintptr(offset)))
+func (d *Decoder) char() byte {
+	return *(*byte)(unsafe.Pointer(uintptr(d.ptr) + uintptr(d.pos)))
 }
 
 // tokenPool has a pool of Decoder instances.

@@ -1,6 +1,6 @@
 module github.com/deveox/blaze
 
-go 1.21.4
+go 1.22
 
 require (
 	github.com/deveox/gu v0.2.0

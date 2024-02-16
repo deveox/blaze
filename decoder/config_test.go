@@ -9,7 +9,7 @@ import (
 )
 
 var dbDecoder = &Config{
-	ContextScope: scopes.CONTEXT_DB,
+	Scope: scopes.CONTEXT_DB,
 }
 
 func newScopedStructJSON() []byte {
@@ -170,7 +170,7 @@ func TestScope_Admin_Update(t *testing.T) {
 }
 
 var clientDecoder = &Config{
-	ContextScope: scopes.CONTEXT_CLIENT,
+	Scope: scopes.CONTEXT_CLIENT,
 }
 
 func TestScope_Client(t *testing.T) {

@@ -15,10 +15,6 @@ func encodePtrText(e *Encoder, v reflect.Value) error {
 
 func encodeAddressableText(e *Encoder, v reflect.Value) error {
 	va := v.Addr()
-	// if va.IsNil() {
-	// 	e.WriteString("null")
-	// 	return nil
-	// }
 	return encodeText(e, va)
 }
 
@@ -28,5 +24,5 @@ func encodeText(e *Encoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	return encodeString(e, b)
+	return encodeStringOrBytes(e, b)
 }

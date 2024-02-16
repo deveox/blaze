@@ -11,10 +11,10 @@ type cache struct {
 	m sync.Map
 }
 
-func (c *cache) Get(t reflect.Type) (*Struct, error) {
+func (c *cache) Get(t reflect.Type) *Struct {
 	v, ok := c.load(t)
 	if ok {
-		return v, nil
+		return v
 	}
 	return c.store(t)
 }
@@ -29,12 +29,12 @@ func (c *cache) load(t reflect.Type) (value *Struct, ok bool) {
 	return
 }
 
-func (c *cache) store(t reflect.Type) (*Struct, error) {
+func (c *cache) store(t reflect.Type) *Struct {
 	t = mirror.DerefType(t)
 	v := NewStruct(t)
 	c.m.Store(t, v)
-	err := v.init()
-	return v, err
+	v.init()
+	return v
 }
 
 var Cache = &cache{}

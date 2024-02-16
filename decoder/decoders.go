@@ -1,127 +1,122 @@
 package decoder
 
 import (
+	"encoding"
 	"encoding/json"
-	"fmt"
 	"reflect"
-	"strings"
-	"time"
+	"sync"
+
+	"github.com/deveox/gu/async"
 )
 
-type decoderFunc func(*Decoder, reflect.Value) error
+type DecoderFn func(*Decoder, reflect.Value) error
 
 // TODO consider using a bitmap for better performance
-type decoders map[string]decoderFunc
 
-func (ds decoders) Get(v reflect.Value) (decoderFunc, error) {
-	t := v.Type().String()
-	t = strings.TrimLeft(t, "*")
-	fn, ok := ds[t]
-	if ok {
-		return fn, nil
+var decoders = &async.Map[reflect.Type, DecoderFn]{}
+
+func getDecoderFn(t reflect.Type) DecoderFn {
+	if fi, ok := decoders.Load(t); ok {
+		return fi
 	}
-	return nativeDecoder, nil
+
+	// To deal with recursive types, populate the map with an
+	// indirect func before we build it. This type waits on the
+	// real func (f) to be ready and then calls it. This indirect
+	// func is only used for recursive types.
+	var (
+		wg sync.WaitGroup
+		f  DecoderFn
+	)
+	wg.Add(1)
+	fi, loaded := decoders.LoadOrStore(t, DecoderFn(func(e *Decoder, v reflect.Value) error {
+		wg.Wait()
+		return f(e, v)
+
+	}))
+	if loaded {
+		return fi
+	}
+
+	// Compute the real encoder and replace the indirect func with it.
+	f = newDecoderFn(t, true)
+	wg.Done()
+	decoders.Store(t, f)
+	return f
 }
 
-func (ds decoders) add(t reflect.Type, fn decoderFunc) {
-	ts := strings.TrimLeft(t.String(), "*")
-	ds[ts] = fn
+type Unmarshaler interface {
+	UnmarshalBlaze(e *Decoder, data []byte) error
 }
 
-func unmarshaler(d *Decoder, v reflect.Value) error {
-	switch v.Kind() {
-	case reflect.Ptr:
-		for v.Kind() == reflect.Ptr {
-			if v.IsNil() {
-				v.Set(reflect.New(v.Type().Elem()))
-			}
-			if v.Type().NumMethod() > 0 {
-				val := v.Interface()
-				if u, ok := val.(json.Unmarshaler); ok {
-					err := d.Skip()
-					if err != nil {
-						return err
-					}
-					return u.UnmarshalJSON(d.Buf[d.start:d.pos])
-				}
-			}
-			v = v.Elem()
+var (
+	stdUnmarshaler  = reflect.TypeFor[json.Unmarshaler]()
+	textUnmarshaler = reflect.TypeFor[encoding.TextMarshaler]()
+	unmarshaler     = reflect.TypeFor[Unmarshaler]()
+)
+
+func newDecoderFn(t reflect.Type, allowAddr bool) DecoderFn {
+	// If we have a non-pointer value whose type implements
+	// Marshaler with a value receiver, then we're better off taking
+	// the address of the value - otherwise we end up with an
+	// allocation as we cast the value to an interface.
+	if t.Kind() != reflect.Pointer && allowAddr {
+		ptr := reflect.PointerTo(t)
+		if ptr.Implements(unmarshaler) {
+			return newIfAddressable(decodeAddressableCustom, newDecoderFn(t, false))
 		}
-		return d.Error("[Blaze unmarshaler()] invalid attempt to decode using json.Unmarshaler, passed pointer(or pointer chain) does not implement json.Unmarshaler")
+		if t.Implements(stdUnmarshaler) {
+			return newIfAddressable(decodeAddressableStd, newDecoderFn(t, false))
+		}
+		if t.Implements(textUnmarshaler) {
+			return newIfAddressable(decodeAddressableText, newDecoderFn(t, false))
+		}
+
+	}
+
+	if t.Implements(unmarshaler) {
+		return decodePtrCustom
+	}
+
+	if t.Implements(stdUnmarshaler) {
+		return decodePtrStd
+	}
+
+	if t.Implements(textUnmarshaler) {
+		return decodePtrText
+	}
+
+	switch t.Kind() {
+	case reflect.Bool:
+		return decodeBool
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return decodeInt
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return decodeUint
+	case reflect.Float32, reflect.Float64:
+		return decodeFloat
+	case reflect.String:
+		return decodeString
+	case reflect.Interface:
+		if t.NumMethod() == 0 {
+			return decodeAny
+		}
+		return decodeInterface
+	case reflect.Struct:
+		return newStructDecoder(t)
+	case reflect.Map:
+		return newMapEncoder(t)
+	case reflect.Slice:
+		return newSliceDecoder(t)
+	case reflect.Array:
+		return newArrayDecoder(t)
+	case reflect.Pointer:
+		return decodePtr
 	default:
-		if v.CanAddr() {
-			v = v.Addr()
-			if v.Type().NumMethod() > 0 {
-				val := v.Interface()
-				if u, ok := val.(json.Unmarshaler); ok {
-					err := d.Skip()
-					if err != nil {
-						return err
-					}
-					return u.UnmarshalJSON(d.Buf[d.start:d.pos])
-				}
-			}
-			return d.Error("[Blaze unmarshaler()] invalid attempt to decode using json.Unmarshaler, indirect value does not implement json.Unmarshaler")
-		}
-		return d.Error("[Blaze unmarshaler()] invalid attempt to decode using json.Unmarshaler, indirect value is not addressable")
+		return decodeInvalid
 	}
 }
 
-func nativeDecoder(d *Decoder, v reflect.Value) error {
-	return d.nativeDecoder(v)
-}
-
-type CustomFn[T any] func(d *Decoder, bytes []byte) (T, error)
-
-func customDecoder[T any](fn CustomFn[T]) decoderFunc {
-	return func(d *Decoder, v reflect.Value) error {
-		err := d.Skip()
-		if err != nil {
-			return err
-		}
-		val, err := fn(d, d.Buf[d.start:d.pos])
-		if err != nil {
-			return err
-		}
-		for v.Kind() == reflect.Ptr {
-			if v.Type().Name() == "" {
-				break
-			}
-			if v.IsNil() {
-				v.Set(reflect.New(v.Type().Elem()))
-			}
-			v = v.Elem()
-		}
-		v.Set(reflect.ValueOf(val))
-		return nil
-	}
-}
-
-var Decoders = decoders{}
-
-func RegisterUnmarshaler(value any) {
-	v := reflect.ValueOf(value)
-	switch v.Kind() {
-	case reflect.Ptr:
-		if v.Type().NumMethod() > 0 {
-			val := v.Interface()
-			if _, ok := val.(json.Unmarshaler); ok {
-				Decoders.add(v.Elem().Type(), unmarshaler)
-				return
-			}
-			panic(fmt.Sprintf("blaze: can't register unmarshaler for type '%s' because it doesn't implement json.Unmarshaler", v.Type()))
-		}
-		panic(fmt.Sprintf("blaze: can't register unmarshaler for type '%s' because it doesn't have any methods", v.Type()))
-
-	default:
-		panic(fmt.Sprintf("blaze: can't register unmarshaler for type '%s', you should pass a pointer", v.Type()))
-	}
-}
-
-func RegisterDecoder[T any](value T, fn CustomFn[T]) {
-	Decoders.add(reflect.TypeOf(value), customDecoder(fn))
-}
-
-func init() {
-	RegisterUnmarshaler(&time.Time{})
+func RegisterDecoder[T any](fn DecoderFn) {
+	decoders.Store(reflect.TypeFor[T](), fn)
 }

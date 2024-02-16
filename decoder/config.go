@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	ContextScope scopes.Context
-	decoderPool  sync.Pool
+	Scope       scopes.Context
+	decoderPool sync.Pool
 }
 
 func (c *Config) Unmarshal(data []byte, v any) error {
@@ -20,14 +20,14 @@ func (c *Config) Unmarshal(data []byte, v any) error {
 func (c *Config) UnmarshalScoped(data []byte, v any, operation scopes.Decoding) error {
 	t := c.NewDecoder(data)
 	defer c.decoderPool.Put(t)
-	t.OperationScope = operation
+	t.operationScope = operation
 	return t.Decode(v)
 }
 
 func (c *Config) UnmarshalScopedWithChanges(data []byte, v any, operation scopes.Decoding) ([]string, error) {
 	t := c.NewDecoder(data)
 	defer c.decoderPool.Put(t)
-	t.OperationScope = operation
+	t.operationScope = operation
 	t.Changes = make([]string, 0, 10)
 	err := t.Decode(v)
 	changes := t.Changes
@@ -52,7 +52,7 @@ func (c *Config) NewDecoder(data []byte) *Decoder {
 		return d
 	}
 	t := &Decoder{
-		ContextScope: c.ContextScope,
+		contextScope: c.Scope,
 	}
 	t.init(data)
 	return t

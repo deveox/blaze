@@ -7,66 +7,70 @@ import (
 	"unicode/utf8"
 )
 
-func (t *Decoder) SkipString() error {
-	t.pos++
+func (d *Decoder) SkipString() error {
+	d.pos++
 	for {
-		c := t.char(t.ptr, t.pos)
+		c := d.char()
 		switch c {
 		case '"':
-			t.pos++
+			d.pos++
 			return nil
 		case '\\':
-			t.pos += 2
+			d.pos += 2
 		case TERMINATION_CHAR:
-			return t.Error("[Blaze SkipString()] unexpected end of input, expected '\"'")
+			return d.Error("[Blaze SkipString()] unexpected end of input, expected '\"'")
 		default:
-			t.pos++
+			d.pos++
 		}
 	}
 }
 
-func (t *Decoder) DecodeString() (string, error) {
-	t.start = t.pos
-	t.pos = t.start + 1
+func (d *Decoder) DecodeString() (string, error) {
+	d.start = d.pos
+	d.pos = d.start + 1
 	for {
-		c := t.char(t.ptr, t.pos)
+		c := d.char()
 		switch c {
 		case '"':
-			str := string(t.Buf[t.start+1 : t.pos])
-			t.pos++
+			str := string(d.Buf[d.start+1 : d.pos])
+			d.pos++
 			return str, nil
 		case '\\':
-			return t.decodeStringWithEscapes()
+			b, err := d.unquoteString()
+			if err != nil {
+				return "", err
+			}
+			return string(b), nil
 		case TERMINATION_CHAR:
-			return "", t.Error("[Blaze DecodeString()] unexpected end of input, expected '\"'")
+			return "", d.Error("[Blaze DecodeString()] unexpected end of input, expected '\"'")
 		}
-		t.pos++
+		d.pos++
 	}
 }
 
-func (t *Decoder) decodeStringWithEscapes() (string, error) {
-	str := t.Buf[t.start+1 : t.pos]
+func (d *Decoder) unquoteString() ([]byte, error) {
+	str := d.Buf[d.start+1 : d.pos]
 loop:
 	for {
-		c := t.char(t.ptr, t.pos)
+		c := d.char()
 		switch c {
 		case '"':
-			return string(str), nil
+			return str, nil
 		case '\\':
-			t.pos++
-			switch t.Buf[t.pos] {
+			d.pos++
+			switch d.Buf[d.pos] {
 			case 'u':
-				t.pos++
+				d.pos++
 				// Read 4 bytes assuming it's a UTF-8 code unit.
-				r, err := t.getU4()
+				r, err := d.getU4()
 				if err != nil {
-					return "", err
+					return str, err
 				}
 				// Check if rune can be a surrogate.
 				if utf16.IsSurrogate(r) {
-					r2, err := t.getU4()
+					r2, err := d.getU4()
 					if err != nil {
-						return "", err
+						return str, err
 					}
 					// If it's a valid surrogate pair, decode it.
 					if dec := utf16.DecodeRune(r, r2); dec != unicode.ReplacementChar {
@@ -95,22 +99,22 @@ loop:
 			case 't':
 				str = append(str, '\t')
 			default:
-				return "", t.Error("[Blaze decodeStringWithEscapes()] invalid escape character")
+				return str, d.Error("[Blaze decodeStringWithEscapes()] invalid escape character")
 			}
 		case TERMINATION_CHAR:
-			t.Error("[Blaze decodeStringWithEscapes()] unexpected end of input, expected '\"'")
+			d.Error("[Blaze decodeStringWithEscapes()] unexpected end of input, expected '\"'")
 		default:
-			str = append(str, t.Buf[t.pos])
+			str = append(str, d.Buf[d.pos])
 
 		}
-		t.pos++
+		d.pos++
 	}
 }
 
 func (t *Decoder) getU4() (rune, error) {
 	var r rune
 	for i := 0; i < 4; i++ {
-		c := t.char(t.ptr, t.pos)
+		c := t.char()
 		switch c {
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			c = c - '0'
@@ -129,27 +133,25 @@ func (t *Decoder) getU4() (rune, error) {
 	return r, nil
 }
 
-func (t *Decoder) decodeString(v reflect.Value) error {
-	str, err := t.DecodeString()
+func decodeString(d *Decoder, v reflect.Value) error {
+	d.SkipWhitespace()
+	c := d.char()
+	switch c {
+	case '"':
+	case 'n':
+		err := d.ScanNull()
+		if err != nil {
+			return err
+		}
+		v.SetZero()
+		return nil
+	default:
+		return d.Error("[Blaze decodeString()] invalid char, expected '\"'")
+	}
+	str, err := d.DecodeString()
 	if err != nil {
 		return err
 	}
-	for v.Kind() == reflect.Ptr {
-		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
-		}
-		v = v.Elem()
-	}
-	switch v.Kind() {
-	case reflect.String:
-		v.SetString(str)
-	case reflect.Interface:
-		if v.NumMethod() > 0 {
-			return t.ErrorF("[Blaze decodeString()] unsupported custom interface %s", v.Kind().String())
-		}
-		v.Set(reflect.ValueOf(str))
-	default:
-		return t.ErrorF("[Blaze decodeString()] can't decode string into Go type  '%s'", v.Type())
-	}
+	v.SetString(str)
 	return nil
 }

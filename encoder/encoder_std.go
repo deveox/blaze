@@ -28,7 +28,6 @@ func encodeStd(e *Encoder, v reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	e.Grow(len(b))
 	e.Write(b)
 	return nil
 }

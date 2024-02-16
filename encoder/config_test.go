@@ -9,7 +9,7 @@ import (
 )
 
 var dbEncoder = &Config{
-	ContextScope: scopes.CONTEXT_DB,
+	Scope: scopes.CONTEXT_DB,
 }
 
 func newScopedStruct() *testdata.ScopedStruct {
@@ -48,7 +48,7 @@ func TestScope_DB(t *testing.T) {
 }
 
 var clientEncoder = &Config{
-	ContextScope: scopes.CONTEXT_CLIENT,
+	Scope: scopes.CONTEXT_CLIENT,
 }
 
 func TestScope_Client(t *testing.T) {
@@ -60,7 +60,7 @@ func TestScope_Client(t *testing.T) {
 }
 
 var adminEncoder = &Config{
-	ContextScope: scopes.CONTEXT_ADMIN,
+	Scope: scopes.CONTEXT_ADMIN,
 }
 
 func TestScope_Admin(t *testing.T) {

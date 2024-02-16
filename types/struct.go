@@ -70,24 +70,20 @@ func NewStruct(t reflect.Type) *Struct {
 	}
 }
 
-func (s *Struct) init() error {
+func (s *Struct) init() {
 	n := s.Type.NumField()
 	s.Fields = make([]*Field, 0, n)
 	for i := 0; i < n; i++ {
 		f := s.Type.Field(i)
-		err := s.initField(f)
-		if err != nil {
-			return err
-		}
+		s.initField(f)
 	}
-	return nil
 }
 
-func (c *Struct) initField(f reflect.StructField) error {
+func (c *Struct) initField(f reflect.StructField) {
 
 	// Ignore unexported fields
 	if !f.IsExported() {
-		return nil
+		return
 	}
 	ft := mirror.DerefType(f.Type)
 
@@ -104,19 +100,13 @@ func (c *Struct) initField(f reflect.StructField) error {
 
 	if ft.Kind() == reflect.Struct {
 		if ft != c.Type {
-			s, err := Cache.Get(f.Type)
-			if err != nil {
-				return err
-			}
+			s := Cache.Get(f.Type)
 			res.Struct = s
 			if res.Anonymous {
 				for _, f := range s.Fields {
 					c.EmbeddedFields = append(c.EmbeddedFields, &EmbeddedField{Field: f, Idx: []int{res.Idx, f.Idx}})
 				}
 				for _, f := range s.EmbeddedFields {
-					if len(f.Idx) >= 10 {
-						return fmt.Errorf("embedded field %s depth is too deep: %d, maximum is 10", res.Name, len(f.Idx))
-					}
 					c.EmbeddedFields = append(c.EmbeddedFields, &EmbeddedField{Field: f.Field, Idx: append([]int{res.Idx}, f.Idx...)})
 				}
 			}
@@ -128,5 +118,4 @@ func (c *Struct) initField(f reflect.StructField) error {
 	res.ObjectKey = []byte(fmt.Sprintf("\"%s\":", res.Name))
 
 	c.Fields = append(c.Fields, res)
-	return nil
 }

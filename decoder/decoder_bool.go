@@ -2,75 +2,81 @@ package decoder
 
 import "reflect"
 
-func (t *Decoder) SkipTrue() error {
-	t.start = t.pos - 1
+func (d *Decoder) SkipTrue() error {
+	d.start = d.pos - 1
 
-	c := t.char(t.ptr, t.pos)
+	c := d.char()
 	if c != 'r' {
-		return t.ErrorF("[Blaze SkipTrue()] invalid char, expected 'true'")
+		return d.ErrorF("[Blaze SkipTrue()] invalid char, expected 'true'")
 	}
-	t.pos++
-	c = t.char(t.ptr, t.pos)
+	d.pos++
+	c = d.char()
 	if c != 'u' {
-		return t.ErrorF("[Blaze SkipTrue()] invalid char, expected 'true'")
+		return d.ErrorF("[Blaze SkipTrue()] invalid char, expected 'true'")
 	}
-	t.pos++
-	c = t.char(t.ptr, t.pos)
+	d.pos++
+	c = d.char()
 	if c != 'e' {
-		return t.ErrorF("[Blaze SkipTrue()] invalid char, expected 'true'")
+		return d.ErrorF("[Blaze SkipTrue()] invalid char, expected 'true'")
 	}
-	t.pos++
+	d.pos++
 	return nil
 }
 
-func (t *Decoder) SkipFalse() error {
-	t.start = t.pos - 1
+func (d *Decoder) SkipFalse() error {
+	d.start = d.pos - 1
 
-	c := t.char(t.ptr, t.pos)
+	c := d.char()
 	if c != 'a' {
-		return t.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
+		return d.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
 	}
-	t.pos++
-	c = t.char(t.ptr, t.pos)
+	d.pos++
+	c = d.char()
 	if c != 'l' {
-		return t.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
+		return d.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
 	}
-	t.pos++
-	c = t.char(t.ptr, t.pos)
+	d.pos++
+	c = d.char()
 	if c != 's' {
-		return t.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
+		return d.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
 	}
-	t.pos++
-	c = t.char(t.ptr, t.pos)
+	d.pos++
+	c = d.char()
 	if c != 'e' {
-		return t.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
+		return d.ErrorF("[Blaze SkipFalse()] invalid char, expected 'false'")
 	}
-	t.pos++
+	d.pos++
 	return nil
 }
 
-func (t *Decoder) DecodeBool() bool {
-	c := t.char(t.ptr, t.start)
-	return c == 't'
-}
-
-func (t *Decoder) decodeBool(v reflect.Value) error {
-	for v.Kind() == reflect.Ptr {
-		if v.IsNil() {
-			v.Set(reflect.New(v.Type().Elem()))
+func decodeBool(d *Decoder, v reflect.Value) error {
+	d.SkipWhitespace()
+	c := d.char()
+	switch c {
+	case 'n':
+		err := d.ScanNull()
+		if err != nil {
+			return err
 		}
-		v = v.Elem()
-	}
-	switch v.Kind() {
-	case reflect.Bool:
-		v.SetBool(t.DecodeBool())
-	case reflect.Interface:
-		if v.NumMethod() > 0 {
-			return t.ErrorF("[Blaze decodeBool()] unsupported custom interface %s", v.Kind().String())
+		v.SetBool(false)
+		return nil
+	case 't':
+		d.pos++
+		err := d.SkipTrue()
+		if err != nil {
+			return err
 		}
-		v.Set(reflect.ValueOf(t.DecodeBool()))
+		v.SetBool(true)
+		return nil
+	case 'f':
+		d.pos++
+		err := d.SkipFalse()
+		if err != nil {
+			return err
+		}
+		v.SetBool(false)
+		return nil
 	default:
-		return t.ErrorF("[Blaze decodeBool()] can't decode bool into Go type '%s'", v.Type())
+		return d.ErrorF("[Blaze decodeBool()] invalid char, expected 't' or 'f'")
 	}
-	return nil
 }

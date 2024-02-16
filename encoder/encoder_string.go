@@ -3,27 +3,24 @@ package encoder
 import "reflect"
 
 func encodeStringOrBytes[T string | []byte](e *Encoder, v T) error {
-	e.Grow(len(v) + 2)
-	b := e.AvailableBuffer()
-	b = append(b, '"')
+	e.WriteByte('"')
 	for i := 0; i < len(v); i++ {
 		switch v[i] {
 		case '"':
-			b = append(b, '\\', '"')
+			e.bytes = append(e.bytes, '\\', '"')
 		case '\\':
-			b = append(b, '\\', '\\')
+			e.bytes = append(e.bytes, '\\', '\\')
 		case '\n':
-			b = append(b, '\\', 'n')
+			e.bytes = append(e.bytes, '\\', 'n')
 		case '\r':
-			b = append(b, '\\', 'r')
+			e.bytes = append(e.bytes, '\\', 'r')
 		case '\t':
-			b = append(b, '\\', 't')
+			e.bytes = append(e.bytes, '\\', 't')
 		default:
-			b = append(b, v[i])
+			e.bytes = append(e.bytes, v[i])
 		}
 	}
-	b = append(b, '"')
-	e.Write(b)
+	e.WriteByte('"')
 	return nil
 }
 

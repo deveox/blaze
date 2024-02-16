@@ -63,8 +63,7 @@ type TestStruct struct {
 
 func TestNewStruct(t *testing.T) {
 	typ := reflect.TypeOf(TestStruct{})
-	s, err := Cache.Get(typ)
-	require.NoError(t, err)
+	s := Cache.Get(typ)
 
 	f, ef, ok := s.GetField("name")
 	require.True(t, ok, "name not found")

@@ -2,6 +2,7 @@ package decoder
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -39,8 +40,10 @@ func UnmarshalNull[T any](t *testing.T, byDefault T) {
 	if err := Unmarshal(data, &v); err != nil {
 		t.Fatal(err)
 	}
-	var expected T
-	require.Equal(t, expected, v)
+	rv := reflect.ValueOf(v)
+	if rv.IsValid() {
+		require.True(t, rv.IsZero())
+	}
 }
 
 type WithChangesNested struct {

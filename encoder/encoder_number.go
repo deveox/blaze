@@ -13,9 +13,7 @@ func encodeInt(e *Encoder, v reflect.Value) error {
 		e.WriteByte('0')
 		return nil
 	}
-	b := e.AvailableBuffer()
-	b = strconv.AppendInt(b, va, 10)
-	e.Write(b)
+	e.bytes = strconv.AppendInt(e.bytes, va, 10)
 	return nil
 }
 
@@ -25,9 +23,7 @@ func encodeUint(e *Encoder, v reflect.Value) error {
 		e.WriteByte('0')
 		return nil
 	}
-	b := e.AvailableBuffer()
-	b = strconv.AppendUint(b, va, 10)
-	e.Write(b)
+	e.bytes = strconv.AppendUint(e.bytes, va, 10)
 	return nil
 }
 
@@ -50,15 +46,14 @@ func (e *Encoder) EncodeFloat(v reflect.Value, bits int) error {
 			fmt = 'e'
 		}
 	}
-	b := e.AvailableBuffer()
-	sl := e.Len()
-	b = strconv.AppendFloat(b, f, fmt, -1, int(bits))
+	sl := len(e.bytes)
+	e.bytes = strconv.AppendFloat(e.bytes, f, fmt, -1, int(bits))
 	if fmt == 'e' {
-		n := len(b) - sl
+		n := len(e.bytes) - sl
 		// clean up e-09 to e-9
-		if n >= 4 && b[n-4] == 'e' && b[n-3] == '-' && b[n-2] == '0' {
-			b[n-2] = b[n-1]
-			b = b[:n-1]
+		if n >= 4 && e.bytes[n-4] == 'e' && e.bytes[n-3] == '-' && e.bytes[n-2] == '0' {
+			e.bytes[n-2] = e.bytes[n-1]
+			e.bytes = e.bytes[:n-1]
 		}
 	}
 	return nil

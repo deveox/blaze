@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	ContextScope scopes.Context
-	pool         sync.Pool
+	Scope scopes.Context
+	pool  sync.Pool
 }
 
 func (c *Config) NewEncoder() *Encoder {
@@ -17,7 +17,7 @@ func (c *Config) NewEncoder() *Encoder {
 		e.bytes = e.bytes[:0]
 		return e
 	}
-	e := &Encoder{bytes: make([]byte, 0, 2048), ContextScope: c.ContextScope}
+	e := &Encoder{bytes: make([]byte, 0, 2048), contextScope: c.Scope}
 	return e
 }
 

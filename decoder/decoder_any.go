@@ -37,8 +37,8 @@ func decodeAny(d *Decoder, v reflect.Value) error {
 		v.SetZero()
 		return nil
 	case '[':
-		var an *[]any
-		vv := reflect.ValueOf(an)
+		an := make([]any, 0)
+		vv := reflect.ValueOf(&an)
 		err := d.decodeSlice(vv.Elem(), decodeAny)
 		if err != nil {
 			return err
@@ -46,8 +46,8 @@ func decodeAny(d *Decoder, v reflect.Value) error {
 		v.Set(vv.Elem())
 		return nil
 	case '{':
-		var mp *map[string]any
-		vv := reflect.ValueOf(mp)
+		mp := make(map[string]any)
+		vv := reflect.ValueOf(&mp)
 		err := d.decodeMap(vv.Elem(), decodeString, decodeAny)
 		if err != nil {
 			return err

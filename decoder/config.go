@@ -14,22 +14,22 @@ type Config struct {
 func (c *Config) Unmarshal(data []byte, v any) error {
 	t := c.NewDecoder(data)
 	defer c.decoderPool.Put(t)
-	return t.Decode(v)
+	return t.unmarshal(v)
 }
 
 func (c *Config) UnmarshalScoped(data []byte, v any, operation scopes.Decoding) error {
 	t := c.NewDecoder(data)
 	defer c.decoderPool.Put(t)
-	t.operationScope = operation
-	return t.Decode(v)
+	t.operation = operation
+	return t.unmarshal(v)
 }
 
 func (c *Config) UnmarshalScopedWithChanges(data []byte, v any, operation scopes.Decoding) ([]string, error) {
 	t := c.NewDecoder(data)
 	defer c.decoderPool.Put(t)
-	t.operationScope = operation
+	t.operation = operation
 	t.Changes = make([]string, 0, 10)
-	err := t.Decode(v)
+	err := t.unmarshal(v)
 	changes := t.Changes
 	t.Changes = nil
 	return changes, err
@@ -39,7 +39,7 @@ func (c *Config) UnmarshalWithChanges(data []byte, v any) ([]string, error) {
 	t := c.NewDecoder(data)
 	defer c.decoderPool.Put(t)
 	t.Changes = make([]string, 0, 10)
-	err := t.Decode(v)
+	err := t.unmarshal(v)
 	changes := t.Changes
 	t.Changes = nil
 	return changes, err
@@ -51,9 +51,7 @@ func (c *Config) NewDecoder(data []byte) *Decoder {
 		d.init(data)
 		return d
 	}
-	t := &Decoder{
-		contextScope: c.Scope,
-	}
+	t := &Decoder{config: c}
 	t.init(data)
 	return t
 }

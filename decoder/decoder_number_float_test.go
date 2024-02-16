@@ -77,7 +77,7 @@ var benchFloat64 = []byte("100.123e10")
 func BenchmarkFloat64_Blaze(b *testing.B) {
 	var v float64
 	for i := 0; i < b.N; i++ {
-		Unmarshal(benchFloat64, &v)
+		DDecoder.Unmarshal(benchFloat64, &v)
 	}
 	b.SetBytes(int64(len(benchFloat64)))
 }

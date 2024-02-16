@@ -43,7 +43,7 @@ func BenchmarkString_HTML_Blaze(b *testing.B) {
 	var str string
 	for i := 0; i < b.N; i++ {
 		data := encodedHtml()
-		err := Unmarshal(data, &str)
+		err := DDecoder.Unmarshal(data, &str)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -87,7 +87,7 @@ func BenchmarkString_HTML_JsonIter(b *testing.B) {
 func BenchmarkString_Simple_Blaze(b *testing.B) {
 	var str string
 	for i := 0; i < b.N; i++ {
-		err := Unmarshal(benchStr, &str)
+		err := DDecoder.Unmarshal(benchStr, &str)
 		if err != nil {
 			b.Fatal(err)
 		}

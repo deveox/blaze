@@ -73,7 +73,7 @@ func BenchmarkFloat64_Blaze(b *testing.B) {
 	f := 100000000003.14159265358979323846
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(f)
+		bytes, _ = DEncoder.Marshal(f)
 	}
 	b.SetBytes(int64(len(bytes)))
 }

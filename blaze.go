@@ -6,24 +6,28 @@ import (
 	"github.com/deveox/blaze/scopes"
 )
 
+var AdminDecoder = &decoder.Config{Scope: scopes.CONTEXT_ADMIN}
+
 func Unmarshal(data []byte, v interface{}) error {
-	return decoder.Unmarshal(data, v)
+	return AdminDecoder.Unmarshal(data, v)
 }
 
 func UnmarshalScoped(data []byte, v any, scope scopes.Decoding) error {
-	return decoder.UnmarshalScoped(data, v, scope)
+	return AdminDecoder.UnmarshalScoped(data, v, scope)
 }
 
 func UnmarshalScopedWithChanges(data []byte, v any, scope scopes.Decoding) ([]string, error) {
-	return decoder.UnmarshalScopedWithChanges(data, v, scope)
+	return AdminDecoder.UnmarshalScopedWithChanges(data, v, scope)
 }
 
 func RegisterDecoder[T any](fn decoder.DecoderFn) {
 	decoder.RegisterDecoder[T](fn)
 }
 
+var AdminEncoder = &encoder.Config{Scope: scopes.CONTEXT_ADMIN}
+
 func Marshal(v any) ([]byte, error) {
-	return encoder.Marshal(v)
+	return AdminEncoder.Marshal(v)
 }
 
 func RegisterEncoder[T any](fn encoder.EncoderFn) {

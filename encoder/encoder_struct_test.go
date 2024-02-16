@@ -121,7 +121,7 @@ func BenchmarkStruct_Empty_Blaze(b *testing.B) {
 	bytes := []byte{}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			bytes, _ = Marshal(v)
+			bytes, _ = DEncoder.Marshal(v)
 		}
 	})
 	b.SetBytes(int64(len(bytes)))

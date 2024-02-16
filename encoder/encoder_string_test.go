@@ -54,7 +54,7 @@ var benchStrEsc = newStrEsc()
 func BenchmarkString_Blaze_Simple(b *testing.B) {
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(benchStr)
+		bytes, _ = DEncoder.Marshal(benchStr)
 	}
 	b.SetBytes(int64(len(bytes)))
 }
@@ -86,7 +86,7 @@ func BenchmarkString_JsonIter_Simple(b *testing.B) {
 func BenchmarkString_Blaze_Escaped(b *testing.B) {
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(benchStrEsc)
+		bytes, _ = DEncoder.Marshal(benchStrEsc)
 	}
 	b.SetBytes(int64(len(bytes)))
 }

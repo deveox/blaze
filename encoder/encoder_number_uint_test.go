@@ -63,7 +63,7 @@ func BenchmarkUint_Blaze(b *testing.B) {
 	uin := uint(102547890)
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(uin)
+		bytes, _ = DEncoder.Marshal(uin)
 	}
 	b.SetBytes(int64(len(bytes)))
 }

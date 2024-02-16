@@ -4,42 +4,28 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"sync"
 
 	"github.com/deveox/blaze/scopes"
 )
 
-func Marshal(v any) ([]byte, error) {
-	e := NewEncoder()
-	defer encodersPool.Put(e)
-	return e.Encode(v)
-}
-
-func NewEncoder() *Encoder {
-	if v := encodersPool.Get(); v != nil {
-		e := v.(*Encoder)
-		e.bytes = e.bytes[:0]
-		return e
-	}
-	return &Encoder{bytes: make([]byte, 0, 2048)}
-}
-
-var encodersPool sync.Pool
-
-const MAX_DEPTH = 1000
+const MAX_DEPTH = 10000
 
 type Encoder struct {
-	bytes        []byte
-	contextScope scopes.Context
-	depth        int
-	anonymous    bool
+	config    *Config
+	bytes     []byte
+	depth     int
+	anonymous bool
 }
 
 func (e *Encoder) Context() scopes.Context {
-	return e.contextScope
+	return e.config.Scope
 }
 
-func (e *Encoder) Encode(v any) ([]byte, error) {
+func (e *Encoder) Marshal(v any) ([]byte, error) {
+	return e.config.Marshal(v)
+}
+
+func (e *Encoder) marshal(v any) ([]byte, error) {
 	err := e.encode(reflect.ValueOf(v))
 	if err != nil {
 		return nil, err

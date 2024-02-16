@@ -24,7 +24,7 @@ func (d *Decoder) decodeStruct(v reflect.Value, si *types.Struct) error {
 			return err
 		}
 		for _, fi := range si.Fields {
-			ok := fi.CheckDecoderScope(d.contextScope, d.operationScope)
+			ok := fi.CheckDecoderScope(d.config.Scope, d.operation)
 			if ok {
 				f := v.Field(fi.Idx)
 				if f.IsZero() {
@@ -72,7 +72,7 @@ func (d *Decoder) decodeStruct(v reflect.Value, si *types.Struct) error {
 		}
 		d.pos++
 		d.SkipWhitespace()
-		field, embedded, ok := si.GetDecoderField(fName, d.contextScope, d.operationScope)
+		field, embedded, ok := si.GetDecoderField(fName, d.config.Scope, d.operation)
 		// fmt.Printf("\nfield %v %s %#v\n\n", ok, v.Type(), field)
 		if ok {
 			var fv reflect.Value

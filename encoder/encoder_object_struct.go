@@ -17,7 +17,7 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 	}
 
 	for _, fi := range si.Fields {
-		ok := fi.CheckEncoderScope(e.contextScope)
+		ok := fi.CheckEncoderScope(e.config.Scope)
 		if !ok {
 			continue
 		}

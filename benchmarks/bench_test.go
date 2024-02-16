@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/deveox/blaze/encoder"
+	"github.com/deveox/blaze"
 
 	stdjson "encoding/json"
 
@@ -184,7 +184,7 @@ func Benchmark_MarshalBigData_Blaze(b *testing.B) {
 	}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			if _, err := encoder.Marshal(&codeStruct); err != nil {
+			if _, err := blaze.Marshal(&codeStruct); err != nil {
 				b.Fatal("Marshal:", err)
 			}
 		}
@@ -246,12 +246,12 @@ func Benchmark_MarshalBytes_GoJson(b *testing.B) {
 func Benchmark_MarshalBytes_Blaze(b *testing.B) {
 	b.ReportAllocs()
 	// 32 fits within encodeState.scratch.
-	b.Run("32", benchMarshalBytes(32, encoder.Marshal))
+	b.Run("32", benchMarshalBytes(32, blaze.Marshal))
 	// 256 doesn't fit in encodeState.scratch, but is small enough to
-	// allocate and avoid the slower base64.NewEncoder.
-	b.Run("256", benchMarshalBytes(256, encoder.Marshal))
+	// allocate and avoid the slower base64.NewBlaze.
+	b.Run("256", benchMarshalBytes(256, blaze.Marshal))
 	// 4096 is large enough that we want to avoid allocating for it.
-	b.Run("4096", benchMarshalBytes(4096, encoder.Marshal))
+	b.Run("4096", benchMarshalBytes(4096, blaze.Marshal))
 }
 
 func Benchmark_MarshalString_EncodingJson(b *testing.B) {
@@ -312,7 +312,7 @@ func Benchmark_MarshalString_Blaze(b *testing.B) {
 	}
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			if _, err := encoder.Marshal(&j); err != nil {
+			if _, err := blaze.Marshal(&j); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -386,7 +386,7 @@ func Benchmark_Encode_SmallStruct_GoJson(b *testing.B) {
 func Benchmark_Encode_SmallStruct_Blaze(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if _, err := encoder.Marshal(NewSmallPayload()); err != nil {
+		if _, err := blaze.Marshal(NewSmallPayload()); err != nil {
 			b.Fatal(err)
 		}
 	}

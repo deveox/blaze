@@ -30,7 +30,7 @@ func TestDecode_Null(t *testing.T) {
 	}
 
 	v2 := &A{A: 1}
-	if err := Unmarshal([]byte("null"), v2); err != nil {
+	if err := DDecoder.Unmarshal([]byte("null"), v2); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, &A{}, v2)
@@ -39,7 +39,7 @@ func TestDecode_Null(t *testing.T) {
 func TestDecode_Null_Slice(t *testing.T) {
 	data := []byte(`[null, null, null]`)
 	var v []int
-	err := Unmarshal(data, &v)
+	err := DDecoder.Unmarshal(data, &v)
 	require.NoError(t, err)
 	require.Equal(t, []int{0, 0, 0}, v)
 }

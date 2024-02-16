@@ -27,7 +27,7 @@ func TestDecode_Struct_Simple(t *testing.T) {
 func BenchmarkStruct_Simple_Blaze(b *testing.B) {
 	var simple Simple
 	for i := 0; i < b.N; i++ {
-		Unmarshal(newSimpleStruct(), &simple)
+		DDecoder.Unmarshal(newSimpleStruct(), &simple)
 	}
 	b.SetBytes(int64(len(newSimpleStruct())))
 }
@@ -97,7 +97,7 @@ func BenchmarkStruct_Complex_Blaze(b *testing.B) {
 	var complex Complex
 	data := newComplexStruct()
 	for i := 0; i < b.N; i++ {
-		err := Unmarshal(data, &complex)
+		err := DDecoder.Unmarshal(data, &complex)
 		if err != nil {
 			b.Fatal(err)
 		}

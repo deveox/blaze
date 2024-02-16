@@ -57,7 +57,7 @@ var benchUint64 = []byte("1000000000000")
 func BenchmarkUint64_Blaze(b *testing.B) {
 	var v uint64
 	for i := 0; i < b.N; i++ {
-		Unmarshal(benchUint64, &v)
+		DDecoder.Unmarshal(benchUint64, &v)
 	}
 	b.SetBytes(int64(len(benchUint64)))
 }

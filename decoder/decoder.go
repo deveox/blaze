@@ -3,57 +3,10 @@ package decoder
 import (
 	"fmt"
 	"reflect"
-	"sync"
 	"unsafe"
 
 	"github.com/deveox/blaze/scopes"
 )
-
-func UnmarshalScoped(data []byte, v any, scope scopes.Decoding) error {
-	t := NewDecoder(data)
-	defer decoderPool.Put(t)
-	t.operationScope = scope
-	return t.Decode(v)
-}
-
-func UnmarshalScopedWithChanges(data []byte, v any, scope scopes.Decoding) ([]string, error) {
-	t := NewDecoder(data)
-	defer decoderPool.Put(t)
-	t.operationScope = scope
-	t.Changes = make([]string, 0, 10)
-	err := t.Decode(v)
-	changes := t.Changes
-	t.Changes = nil
-	return changes, err
-}
-
-func Unmarshal(data []byte, v any) error {
-	t := NewDecoder(data)
-	defer decoderPool.Put(t)
-	return t.Decode(v)
-}
-
-func UnmarshalWithChanges(data []byte, v any) ([]string, error) {
-	t := NewDecoder(data)
-	defer decoderPool.Put(t)
-	t.Changes = make([]string, 0, 10)
-	err := t.Decode(v)
-	changes := t.Changes
-	t.Changes = nil
-	return changes, err
-
-}
-
-func NewDecoder(data []byte) *Decoder {
-	if v := decoderPool.Get(); v != nil {
-		d := v.(*Decoder)
-		d.init(data)
-		return d
-	}
-	t := &Decoder{}
-	t.init(data)
-	return t
-}
 
 // In order to decode, you have to traverse the input buffer character by position. At that time, if you check whether the buffer has reached the end, it will be very slow.
 // Therefore, by adding the NUL (\000) character to the end of the read buffer as shown below, it is possible to check the termination character at the same time as other characters.
@@ -61,30 +14,47 @@ const TERMINATION_CHAR = '\000'
 const MAX_DEPTH = 1000
 
 type Decoder struct {
-	depth          int
-	Buf            []byte
-	ptr            unsafe.Pointer
-	pos            int64
-	start          int64
-	contextScope   scopes.Context
-	operationScope scopes.Decoding
-	Changes        []string
-	ChangesPrefix  string
+	config        *Config
+	depth         int
+	Buf           []byte
+	ptr           unsafe.Pointer
+	pos           int64
+	start         int64
+	operation     scopes.Decoding
+	Changes       []string
+	ChangesPrefix string
+}
+
+func (d *Decoder) Unmarshal(data []byte, v any) error {
+	return d.config.UnmarshalScoped(data, v, d.operation)
+}
+
+func (d *Decoder) UnmarshalScoped(data []byte, v any, operation scopes.Decoding) error {
+	return d.config.UnmarshalScoped(data, v, operation)
+}
+
+func (d *Decoder) UnmarshalScopedWithChanges(data []byte, v any, operation scopes.Decoding) ([]string, error) {
+	return d.config.UnmarshalScopedWithChanges(data, v, operation)
+}
+
+func (d *Decoder) UnmarshalWithChanges(data []byte, v any) ([]string, error) {
+	return d.config.UnmarshalScopedWithChanges(data, v, d.operation)
 }
 
 func (d *Decoder) Context() scopes.Context {
-	return d.contextScope
+	return d.config.Scope
 }
 
 func (d *Decoder) Operation() scopes.Decoding {
-	return d.operationScope
+	return d.operation
 }
 
 func (d *Decoder) decode(v reflect.Value) error {
 	return getDecoderFn(v.Type())(d, v)
+
 }
 
-func (d *Decoder) Decode(v any) error {
+func (d *Decoder) unmarshal(v any) error {
 	rv := reflect.ValueOf(v)
 	if !rv.IsValid() {
 		return d.Error("[Blaze decode()] can't decode to nil value")
@@ -164,7 +134,7 @@ func (d *Decoder) init(data []byte) {
 	d.ptr = unsafe.Pointer(unsafe.SliceData(d.Buf))
 	d.pos = 0
 	d.start = 0
-	d.operationScope = 0
+	d.operation = 0
 	d.depth = 0
 }
 
@@ -199,10 +169,6 @@ func (d *Decoder) ErrorF(format string, args ...any) error {
 func (d *Decoder) char() byte {
 	return *(*byte)(unsafe.Pointer(uintptr(d.ptr) + uintptr(d.pos)))
 }
-
-// tokenPool has a pool of Decoder instances.
-// It's used to reduce the number of allocations when decoding JSON.
-var decoderPool sync.Pool
 
 func BytesToString(b []byte) string {
 	// Ignore if your IDE shows an error here; it's a false positive.

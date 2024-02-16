@@ -7,8 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Default encoder for tests
+var DEncoder = &Config{}
+
 func EqualString(t *testing.T, v interface{}, expected string) {
-	bytes, err := Marshal(v)
+	bytes, err := DEncoder.Marshal(v)
 	require.NoError(t, err)
 	require.Equal(t, expected, string(bytes))
 
@@ -17,7 +20,7 @@ func EqualString(t *testing.T, v interface{}, expected string) {
 func EqualMarshaling(t *testing.T, v interface{}) {
 	stdBytes, err := json.Marshal(v)
 	require.NoError(t, err)
-	bytes, err := Marshal(v)
+	bytes, err := DEncoder.Marshal(v)
 	require.NoError(t, err)
 	stdBytes = AddIndent(stdBytes)
 	bytes = AddIndent(bytes)
@@ -27,7 +30,7 @@ func EqualMarshaling(t *testing.T, v interface{}) {
 func EqualMap(t *testing.T, v interface{}) {
 	stdBytes, err := json.Marshal(v)
 	require.NoError(t, err)
-	bytes, err := Marshal(v)
+	bytes, err := DEncoder.Marshal(v)
 	require.NoError(t, err)
 
 	var v2 interface{}

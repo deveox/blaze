@@ -47,7 +47,7 @@ func BenchmarkBool_Blaze(b *testing.B) {
 	v := false
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(v)
+		bytes, _ = DEncoder.Marshal(v)
 	}
 	b.SetBytes(int64(len(bytes)))
 }

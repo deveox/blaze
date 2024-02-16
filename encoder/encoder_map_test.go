@@ -88,7 +88,7 @@ func BenchmarkMap_Simple_Blaze(b *testing.B) {
 	s := getBenchMap(100)
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(s)
+		bytes, _ = DEncoder.Marshal(s)
 	}
 	b.SetBytes(int64(len(bytes)))
 }
@@ -115,7 +115,7 @@ func BenchmarkMap_Simple_Big_Blaze(b *testing.B) {
 	s := getBenchMap(10_000)
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(s)
+		bytes, _ = DEncoder.Marshal(s)
 	}
 	b.SetBytes(int64(len(bytes)))
 }

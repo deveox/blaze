@@ -21,7 +21,7 @@ func TestDecode_Bool(t *testing.T) {
 func BenchmarkBool_Blaze(b *testing.B) {
 	var boolean bool
 	for i := 0; i < b.N; i++ {
-		Unmarshal([]byte("true"), &boolean)
+		DDecoder.Unmarshal([]byte("true"), &boolean)
 	}
 	b.SetBytes(int64(len("true")))
 }

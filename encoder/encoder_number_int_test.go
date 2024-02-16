@@ -58,7 +58,7 @@ func BenchmarkInt_Blaze(b *testing.B) {
 	in := 102547890
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(in)
+		bytes, _ = DEncoder.Marshal(in)
 	}
 	b.SetBytes(int64(len(bytes)))
 }

@@ -8,6 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Default decoder for tests
+var DDecoder = &Config{}
+
 func EqualUnmarshaling[T any](t *testing.T, data []byte) {
 	var v T
 	EqualUnmarshalingTo(t, data, v)
@@ -20,7 +23,7 @@ func EqualUnmarshalingTo[T any](t *testing.T, data []byte, byDefault T) {
 	}
 
 	v2 := byDefault
-	if err := Unmarshal(data, &v2); err != nil {
+	if err := DDecoder.Unmarshal(data, &v2); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, v, v2)
@@ -28,7 +31,7 @@ func EqualUnmarshalingTo[T any](t *testing.T, data []byte, byDefault T) {
 
 func EqualTo[T any](t *testing.T, data []byte, expected T) {
 	var v T
-	if err := Unmarshal(data, &v); err != nil {
+	if err := DDecoder.Unmarshal(data, &v); err != nil {
 		t.Fatal(err)
 	}
 	require.Equal(t, expected, v)
@@ -37,7 +40,7 @@ func EqualTo[T any](t *testing.T, data []byte, expected T) {
 func UnmarshalNull[T any](t *testing.T, byDefault T) {
 	data := []byte("null")
 	v := byDefault
-	if err := Unmarshal(data, &v); err != nil {
+	if err := DDecoder.Unmarshal(data, &v); err != nil {
 		t.Fatal(err)
 	}
 	rv := reflect.ValueOf(v)
@@ -60,7 +63,7 @@ type WithChanges struct {
 func TestUnmarshal_WithChanges(t *testing.T) {
 	data := []byte(`{"name":"test","age":10,"nested":{"name":"test","nested":{"name":"test","age":10}}}`)
 	var v WithChanges
-	changes, err := UnmarshalWithChanges(data, &v)
+	changes, err := DDecoder.UnmarshalWithChanges(data, &v)
 	require.NoError(t, err)
 	require.Equal(t, []string{"name", "age", "nested", "nested.name", "nested.nested", "nested.nested.name", "nested.nested.age"}, changes)
 

@@ -17,12 +17,12 @@ func (c *Config) NewEncoder() *Encoder {
 		e.bytes = e.bytes[:0]
 		return e
 	}
-	e := &Encoder{bytes: make([]byte, 0, 2048), contextScope: c.Scope}
+	e := &Encoder{bytes: make([]byte, 0, 2048), config: c}
 	return e
 }
 
 func (c *Config) Marshal(v any) ([]byte, error) {
 	e := c.NewEncoder()
 	defer c.pool.Put(e)
-	return e.Encode(v)
+	return e.marshal(v)
 }

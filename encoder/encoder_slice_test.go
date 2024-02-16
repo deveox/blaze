@@ -58,7 +58,7 @@ func BenchmarkSlice_Matrix_Blaze(b *testing.B) {
 
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(s)
+		bytes, _ = DEncoder.Marshal(s)
 	}
 	b.SetBytes(int64(len(bytes)))
 }
@@ -86,7 +86,7 @@ func BenchmarkSlice_Simple_Blaze(b *testing.B) {
 
 	bytes := []byte{}
 	for i := 0; i < b.N; i++ {
-		bytes, _ = Marshal(s)
+		bytes, _ = DEncoder.Marshal(s)
 	}
 	b.SetBytes(int64(len(bytes)))
 }

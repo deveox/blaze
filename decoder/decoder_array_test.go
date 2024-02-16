@@ -66,7 +66,7 @@ func BenchmarkSlice_String_Blaze(b *testing.B) {
 	var slice []string
 	data := encodedSlice(100)
 	for i := 0; i < b.N; i++ {
-		Unmarshal(data, &slice)
+		DDecoder.Unmarshal(data, &slice)
 	}
 	b.SetBytes(int64(len(data)))
 }
@@ -101,7 +101,7 @@ func BenchmarkMatrix_Int_Blaze(b *testing.B) {
 	var slice [][][][]int
 	data := encodedSliceInt(3)
 	for i := 0; i < b.N; i++ {
-		err := Unmarshal(data, &slice)
+		err := DDecoder.Unmarshal(data, &slice)
 		if err != nil {
 			b.Fatal(err)
 		}

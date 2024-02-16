@@ -35,7 +35,7 @@ var benchMap = []byte(`{"hello":"world"}`)
 func BenchmarkMap_Blaze(b *testing.B) {
 	var m map[string]string
 	for i := 0; i < b.N; i++ {
-		Unmarshal(benchMap, &m)
+		DDecoder.Unmarshal(benchMap, &m)
 	}
 	b.SetBytes(int64(len(benchMap)))
 }

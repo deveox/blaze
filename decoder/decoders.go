@@ -65,10 +65,10 @@ func newDecoderFn(t reflect.Type, allowAddr bool) DecoderFn {
 		if ptr.Implements(unmarshaler) {
 			return newIfAddressable(decodeAddressableCustom, newDecoderFn(t, false))
 		}
-		if t.Implements(stdUnmarshaler) {
+		if ptr.Implements(stdUnmarshaler) {
 			return newIfAddressable(decodeAddressableStd, newDecoderFn(t, false))
 		}
-		if t.Implements(textUnmarshaler) {
+		if ptr.Implements(textUnmarshaler) {
 			return newIfAddressable(decodeAddressableText, newDecoderFn(t, false))
 		}
 

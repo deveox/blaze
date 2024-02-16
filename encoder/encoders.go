@@ -60,16 +60,16 @@ func newEncoderFn(t reflect.Type, allowAddr bool) EncoderFn {
 	// the address of the value - otherwise we end up with an
 	// allocation as we cast the value to an interface.
 	if t.Kind() != reflect.Pointer && allowAddr {
-		if t.Implements(marshaler) {
+		ptr := reflect.PointerTo(t)
+		if ptr.Implements(marshaler) {
 			return newCondAddrEncoder(encodeAddressableCustom, newEncoderFn(t, false))
 		}
-		if t.Implements(stdMarshaler) {
+		if ptr.Implements(stdMarshaler) {
 			return newCondAddrEncoder(encodeAddressableStd, newEncoderFn(t, false))
 		}
-		if t.Implements(textMarshaler) {
+		if ptr.Implements(textMarshaler) {
 			return newCondAddrEncoder(encodeAddressableText, newEncoderFn(t, false))
 		}
-
 	}
 
 	if t.Implements(marshaler) {

@@ -40,6 +40,7 @@ func (d *Decoder) DecodeString() (string, error) {
 			if err != nil {
 				return "", err
 			}
+			d.pos++
 			return string(b), nil
 		case TERMINATION_CHAR:
 			return "", d.Error("[Blaze DecodeString()] unexpected end of input, expected '\"'")

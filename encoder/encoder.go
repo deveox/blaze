@@ -25,6 +25,10 @@ func (e *Encoder) Marshal(v any) ([]byte, error) {
 	return e.config.Marshal(v)
 }
 
+func (e *Encoder) Encode(v any) error {
+	return e.encode(reflect.ValueOf(v))
+}
+
 func (e *Encoder) marshal(v any) ([]byte, error) {
 	err := e.encode(reflect.ValueOf(v))
 	if err != nil {

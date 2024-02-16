@@ -160,7 +160,7 @@ Blaze interfaces will take precedence over standard library `json.Marshaler` and
 
 ```go
 // Implement custom marshaler
-func (*MyStruct) MarshalBlaze(d *encoder.Encoder) ([]byte, error) {
+func (*MyStruct) MarshalBlaze(d *encoder.Encoder) error {
     // Optionally you can do different things based on context
     switch d.Context() {
     case scopes.CONTEXT_ADMIN:
@@ -170,6 +170,14 @@ func (*MyStruct) MarshalBlaze(d *encoder.Encoder) ([]byte, error) {
     case scopes.CONTEXT_DB:
         // ...
     }
+    // Always use 'd' to encode, it will preserve the scope
+    // Use this to encode fields reusing the same encoder
+    return d.Encode(1)
+    // If you need access to bytes, you can use this, but it will create a new encoder
+    b, err := d.Marshal(1)
+    // do something with b
+    e.Write(b)
+    return err
     // ...
 }
 
@@ -194,6 +202,18 @@ func (*MyStruct) UnmarshalBlaze(d *decoder.Decoder, data []byte) error {
         // ...
     }
     // If you implement your own unmarshaler, you need to handle changes yourself
+    // Always use 'd' to decode, it will preserve the scope
+    type OtherStruct struct {
+        // ...
+    }
+    var other OtherStruct
+    err := d.Unmarshal(data, &other)
+    if err != nil {
+        return err
+    }
+    // ...
+    *MyStruct = res
+    return nil
 }
 ```
 

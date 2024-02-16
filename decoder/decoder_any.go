@@ -3,6 +3,7 @@ package decoder
 import "reflect"
 
 // TODO remove allocations
+// TODO add tests
 func decodeAny(d *Decoder, v reflect.Value) error {
 	d.SkipWhitespace()
 	c := d.char()

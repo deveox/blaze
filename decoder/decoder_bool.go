@@ -48,32 +48,29 @@ func (d *Decoder) SkipFalse() error {
 	return nil
 }
 
-func decodeBool(d *Decoder, v reflect.Value) error {
+func (d *Decoder) decodeToBool() (bool, error) {
 	d.SkipWhitespace()
 	c := d.char()
 	switch c {
 	case 'n':
 		err := d.ScanNull()
-		if err != nil {
-			return err
-		}
-		v.SetBool(false)
-		return nil
+		return false, err
 	case 't':
 		err := d.SkipTrue()
-		if err != nil {
-			return err
-		}
-		v.SetBool(true)
-		return nil
+		return true, err
 	case 'f':
 		err := d.SkipFalse()
-		if err != nil {
-			return err
-		}
-		v.SetBool(false)
-		return nil
+		return false, err
 	default:
-		return d.ErrorF("[Blaze decodeBool()] invalid char, expected 't' or 'f'")
+		return false, d.ErrorF("[Blaze decodeBool()] invalid char, expected 't' or 'f'")
 	}
+}
+
+func decodeBool(d *Decoder, v reflect.Value) error {
+	b, err := d.decodeToBool()
+	if err != nil {
+		return err
+	}
+	v.SetBool(b)
+	return nil
 }

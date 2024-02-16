@@ -190,50 +190,50 @@ func decodeUint(d *Decoder, v reflect.Value) error {
 	return nil
 }
 
-func decodeFloat(d *Decoder, v reflect.Value) error {
+func (d *Decoder) decodeToFloat(bits int) (float64, error) {
 	d.SkipWhitespace()
 	c := d.char()
 	d.start = d.pos
 	switch c {
 	case '"':
 		d.pos++
-		err := decodeFloat(d, v)
+		fl, err := d.decodeToFloat(bits)
 		if err != nil {
-			return err
+			return fl, err
 		}
 		d.pos++
-		return nil
+		return fl, nil
 	case 'n':
 		err := d.ScanNull()
-		if err != nil {
-			return err
-		}
-		v.SetFloat(0)
-		return nil
+		return 0, err
 	case '-':
 		err := d.SkipMinus(true)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	case '0':
 		err := d.SkipZero(true)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		err := d.SkipNumber(true, true)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	default:
-		return d.Error("[Blaze decodeInt()] invalid char, expected '-' or integer")
+		return 0, d.Error("[Blaze decodeInt()] invalid char, expected '-' or integer")
 	}
 
 	str := BytesToString(d.Buf[d.start:d.pos])
-	n, err := strconv.ParseFloat(str, v.Type().Bits())
+	return strconv.ParseFloat(str, bits)
+}
+
+func decodeFloat(d *Decoder, v reflect.Value) error {
+	fl, err := d.decodeToFloat(v.Type().Bits())
 	if err != nil {
-		return d.Error(err.Error())
+		return err
 	}
-	v.SetFloat(n)
+	v.SetFloat(fl)
 	return nil
 }

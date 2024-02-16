@@ -15,22 +15,18 @@ func decodeAny(d *Decoder, v reflect.Value) error {
 		v.Set(reflect.ValueOf(str))
 		return nil
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-':
-		var fl *float64
-		vv := reflect.ValueOf(fl)
-		err := decodeFloat(d, vv)
+		fl, err := d.decodeToFloat(64)
 		if err != nil {
 			return err
 		}
-		v.Set(vv)
+		v.Set(reflect.ValueOf(fl))
 		return nil
 	case 't', 'f':
-		var bol *bool
-		vv := reflect.ValueOf(bol)
-		err := decodeBool(d, vv)
+		bol, err := d.decodeToBool()
 		if err != nil {
 			return err
 		}
-		v.Set(vv)
+		v.Set(reflect.ValueOf(bol))
 		return nil
 	case 'n':
 		err := d.ScanNull()

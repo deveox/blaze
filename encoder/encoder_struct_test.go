@@ -55,6 +55,11 @@ func (d *Data) InterfaceMethod() {}
 
 func newDataEmpty(depth int, sliceLen int, nested bool) *DataEmpty {
 	res := &DataEmpty{
+		EmbeddedStruct: EmbeddedStruct{
+			Id:      42,
+			Created: time.Now(),
+			Updated: time.Now(),
+		},
 		String:            "test",
 		Int16:             42,
 		Float32:           3.14,
@@ -77,7 +82,13 @@ func newDataEmpty(depth int, sliceLen int, nested bool) *DataEmpty {
 	return res
 }
 
+type EmbeddedStruct struct {
+	Id      uint64    `json:"id,omitempty"`
+	Created time.Time `json:"created,omitempty"`
+	Updated time.Time `json:"updated,omitempty"`
+}
 type DataEmpty struct {
+	EmbeddedStruct
 	String            string        `json:"string,omitempty"`
 	Int16             int16         `json:"int16,omitempty"`
 	Float32           float32       `json:"float32,omitempty"`
@@ -107,6 +118,10 @@ func TestEncode_Struct_Empty(t *testing.T) {
 	// Omit empty
 	str := DataEmpty{
 		Time: time.Now(),
+		EmbeddedStruct: EmbeddedStruct{
+			Created: time.Now(),
+			Updated: time.Now(),
+		},
 	}
 	EqualMarshaling(t, str)
 

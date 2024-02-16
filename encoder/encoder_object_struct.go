@@ -11,8 +11,8 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 	defer func() {
 		e.depth--
 	}()
-
-	if !e.anonymous {
+	anonymous := e.anonymous
+	if !anonymous {
 		e.WriteByte('{')
 	}
 
@@ -47,7 +47,7 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 		e.WriteByte(',')
 	}
 	last := len(e.bytes) - 1
-	if e.anonymous {
+	if anonymous {
 		if e.bytes[last] == ',' {
 			e.bytes = e.bytes[:last]
 		}

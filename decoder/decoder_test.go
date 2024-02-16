@@ -56,7 +56,7 @@ type WithChangesNested struct {
 }
 type WithChanges struct {
 	Name   string
-	Age    int
+	Age    int `blaze:"read"`
 	Nested *WithChangesNested
 }
 
@@ -65,6 +65,10 @@ func TestUnmarshal_WithChanges(t *testing.T) {
 	var v WithChanges
 	changes, err := DDecoder.UnmarshalWithChanges(data, &v)
 	require.NoError(t, err)
-	require.Equal(t, []string{"name", "age", "nested", "nested.name", "nested.nested", "nested.nested.name", "nested.nested.age"}, changes)
+	require.Equal(t, []string{"name", "nested", "nested.name", "nested.nested", "nested.nested.name"}, changes)
+	data = []byte(`{"name":"test","age":10,"nested":{"name":"test","age":10, "nested":{"age":10}}}`)
+	changes, err = DDecoder.UnmarshalWithChanges(data, &v)
+	require.NoError(t, err)
+	require.Equal(t, []string{"name", "nested", "nested.name", "nested.age"}, changes)
 
 }

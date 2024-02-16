@@ -134,7 +134,7 @@ func (t *Decoder) getU4() (rune, error) {
 	return r, nil
 }
 
-func decodeString(d *Decoder, v reflect.Value) error {
+func (d *Decoder) decodeToString() (string, error) {
 	d.SkipWhitespace()
 	c := d.char()
 	switch c {
@@ -142,14 +142,17 @@ func decodeString(d *Decoder, v reflect.Value) error {
 	case 'n':
 		err := d.ScanNull()
 		if err != nil {
-			return err
+			return "", err
 		}
-		v.SetZero()
-		return nil
+		return "", nil
 	default:
-		return d.Error("[Blaze decodeString()] invalid char, expected '\"'")
+		return "", d.Error("[Blaze decodeString()] invalid char, expected '\"'")
 	}
-	str, err := d.DecodeString()
+	return d.DecodeString()
+}
+
+func decodeString(d *Decoder, v reflect.Value) error {
+	str, err := d.decodeToString()
 	if err != nil {
 		return err
 	}

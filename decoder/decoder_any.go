@@ -38,20 +38,20 @@ func decodeAny(d *Decoder, v reflect.Value) error {
 	case '[':
 		var an *[]any
 		vv := reflect.ValueOf(an)
-		err := d.decodeSlice(vv, decodeAny)
+		err := d.decodeSlice(vv.Elem(), decodeAny)
 		if err != nil {
 			return err
 		}
-		v.Set(vv)
+		v.Set(vv.Elem())
 		return nil
 	case '{':
 		var mp *map[string]any
 		vv := reflect.ValueOf(mp)
-		err := d.decodeMap(vv, decodeString, decodeAny)
+		err := d.decodeMap(vv.Elem(), decodeString, decodeAny)
 		if err != nil {
 			return err
 		}
-		v.Set(vv)
+		v.Set(vv.Elem())
 		return nil
 	case TERMINATION_CHAR:
 		return d.Error("[Blaze decode()] unexpected end of input, expected beginning of value")

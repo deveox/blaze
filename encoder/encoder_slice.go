@@ -42,7 +42,7 @@ func newSliceEncoder(t reflect.Type) EncoderFn {
 func newArrayEncoder(t reflect.Type) EncoderFn {
 	vEnc := newEncoderFn(t.Elem(), true)
 	return func(e *Encoder, v reflect.Value) error {
-		if v.IsNil() {
+		if v.Kind() == reflect.Slice && v.IsNil() {
 			e.WriteString("null")
 			return nil
 		}

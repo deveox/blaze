@@ -104,6 +104,32 @@ type DataEmpty struct {
 
 func (d *DataEmpty) InterfaceMethod() {}
 
+type EmbeddedIgnored struct {
+	Field string `json:"-"`
+}
+type WithEmbeddedIgnored struct {
+	EmbeddedIgnored
+	IgnoredField IgnoredField `json:"ignoredField,omitempty"`
+	Hello        int          `json:"hello"`
+}
+
+type IgnoredField string
+
+func (i IgnoredField) MarshalBlaze(e *Encoder) error {
+	return nil
+}
+func (i IgnoredField) MarshalJSON() ([]byte, error) {
+	return []byte(`""`), nil
+}
+
+func TestEncode_Struct_Ignored(t *testing.T) {
+	s := WithEmbeddedIgnored{
+		EmbeddedIgnored: EmbeddedIgnored{Field: "123"},
+		IgnoredField:    IgnoredField("ignored"),
+		Hello:           123,
+	}
+	EqualString(t, s, `{"hello":123}`)
+}
 func TestEncode_Struct(t *testing.T) {
 	// Omit empty
 	v := newDataEmpty(2, 1, true)

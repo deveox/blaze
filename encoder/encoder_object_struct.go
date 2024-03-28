@@ -28,11 +28,12 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 		if f.IsZero() && !fi.KeepEmpty {
 			continue
 		}
-
+		oldLen := len(e.bytes)
 		switch f.Kind() {
 		case reflect.Struct:
 			if !fi.Anonymous {
 				e.Write(fi.ObjectKey)
+				oldLen = len(e.bytes)
 			}
 			e.anonymous = fi.Anonymous
 			if err := e.encode(f); err != nil {
@@ -40,11 +41,19 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 			}
 		default:
 			e.Write(fi.ObjectKey)
+			oldLen = len(e.bytes)
 			if err := e.encode(f); err != nil {
 				return err
 			}
 		}
-		e.WriteByte(',')
+		if len(e.bytes) == oldLen {
+			if fi.Anonymous && f.Kind() == reflect.Struct {
+				continue
+			}
+			e.bytes = e.bytes[:len(e.bytes)-len(fi.ObjectKey)]
+		} else {
+			e.WriteByte(',')
+		}
 	}
 	last := len(e.bytes) - 1
 	if anonymous {

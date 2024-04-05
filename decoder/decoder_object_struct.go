@@ -24,17 +24,17 @@ func (d *Decoder) decodeStruct(v reflect.Value, si *types.Struct) error {
 			return err
 		}
 		for _, fi := range si.Fields {
-			ok := fi.CheckDecoderScope(d.config.Scope, d.operation)
+			ok := fi.Field.CheckDecoderScope(d.config.Scope, d.operation)
 			if ok {
-				f := v.Field(fi.Idx)
+				f := fi.Value(v)
 				if f.IsZero() {
 					continue
 				}
 				if d.Changes != nil {
 					if prefix == "" {
-						d.Changes = append(d.Changes, fi.Name)
+						d.Changes = append(d.Changes, fi.Field.Name)
 					} else {
-						d.Changes = append(d.Changes, fmt.Sprintf("%s.%s", prefix, fi.Name))
+						d.Changes = append(d.Changes, fmt.Sprintf("%s.%s", prefix, fi.Field.Name))
 					}
 				}
 				f.SetZero()
@@ -72,20 +72,15 @@ func (d *Decoder) decodeStruct(v reflect.Value, si *types.Struct) error {
 		}
 		d.pos++
 		d.SkipWhitespace()
-		field, embedded, ok := si.GetDecoderField(fName, d.config.Scope, d.operation)
+		field, ok := si.GetDecoderField(fName, d.config.Scope, d.operation)
 		// fmt.Printf("\nfield %v %s %#v\n\n", ok, v.Type(), field)
 		if ok {
-			var fv reflect.Value
-			if embedded != nil {
-				fv = embedded.Value(v)
-			} else {
-				fv = v.Field(field.Idx)
-			}
+			fv := field.Value(v)
 			if d.Changes != nil {
 				if prefix == "" {
-					d.ChangesPrefix = field.Name
+					d.ChangesPrefix = field.Field.Name
 				} else {
-					d.ChangesPrefix = fmt.Sprintf("%s.%s", prefix, field.Name)
+					d.ChangesPrefix = fmt.Sprintf("%s.%s", prefix, field.Field.Name)
 				}
 				d.Changes = append(d.Changes, d.ChangesPrefix)
 			}
@@ -93,7 +88,7 @@ func (d *Decoder) decodeStruct(v reflect.Value, si *types.Struct) error {
 			if err := d.decode(fv); err != nil {
 				return err
 			}
-			if field.Struct != nil {
+			if field.Field.Struct != nil {
 				if len(d.Changes) == oldLen && len(d.Changes) > 0 {
 					d.Changes = d.Changes[:len(d.Changes)-1]
 				}

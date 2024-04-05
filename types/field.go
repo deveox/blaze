@@ -7,6 +7,24 @@ import (
 	"github.com/deveox/blaze/scopes"
 )
 
+type StructField struct {
+	Field *Field
+	Idx   []int
+}
+
+func (e *StructField) Value(v reflect.Value) reflect.Value {
+	for _, i := range e.Idx {
+		if v.Kind() == reflect.Ptr {
+			if v.IsNil() {
+				v.Set(reflect.New(v.Type().Elem()))
+			}
+			v = v.Elem()
+		}
+		v = v.Field(i)
+	}
+	return v
+}
+
 type Field struct {
 	Name      string
 	ObjectKey []byte
@@ -16,10 +34,9 @@ type Field struct {
 	AdminScope  Operation
 
 	KeepEmpty bool
-	Anonymous bool
 	Struct    *Struct
 	Type      reflect.Type
-	Idx       int
+	Short     bool
 }
 
 func (f *Field) CheckEncoderScope(context scopes.Context) bool {
@@ -64,6 +81,8 @@ loop:
 		switch v {
 		case "":
 			break loop
+		case TAG_SHORT:
+			f.Short = true
 		case TAG_KEEP:
 			f.KeepEmpty = true
 		case "omit":

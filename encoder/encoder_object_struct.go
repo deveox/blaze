@@ -15,37 +15,31 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 	if !anonymous {
 		e.WriteByte('{')
 	}
+	path := e.fields.currentPath
 
 	for _, fi := range si.Fields {
-		ok := fi.CheckEncoderScope(e.config.Scope)
+		ok := fi.Field.CheckEncoderScope(e.config.Scope)
 		if !ok {
 			continue
 		}
-		f := v.Field(fi.Idx)
+
+		f := fi.Value(v)
 
 		// Handle zero values
-
-		if f.IsZero() && !fi.KeepEmpty {
+		if f.IsZero() && !fi.Field.KeepEmpty {
 			continue
 		}
-
-		switch f.Kind() {
-		case reflect.Struct:
-			if !fi.Anonymous {
-				e.Write(fi.ObjectKey)
-			}
-			e.anonymous = fi.Anonymous
-			if err := e.encode(f); err != nil {
-				return err
-			}
-		default:
-			e.Write(fi.ObjectKey)
-			if err := e.encode(f); err != nil {
-				return err
-			}
+		e.fields.currentPath = path
+		if !e.fields.Has(fi.Field.Name, fi.Field.Short) {
+			continue
+		}
+		e.Write(fi.Field.ObjectKey)
+		if err := e.encode(f); err != nil {
+			return err
 		}
 		e.WriteByte(',')
 	}
+	e.fields.currentPath = path
 	last := len(e.bytes) - 1
 	if anonymous {
 		if e.bytes[last] == ',' {

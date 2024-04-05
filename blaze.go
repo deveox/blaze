@@ -30,6 +30,10 @@ func Marshal(v any) ([]byte, error) {
 	return AdminEncoder.Marshal(v)
 }
 
+func MarshalPartial(v any, fields []string, short bool) ([]byte, error) {
+	return AdminEncoder.MarshalPartial(v, fields, short)
+}
+
 func RegisterEncoder[T any](fn encoder.EncoderFn) {
 	encoder.RegisterEncoder[T](fn)
 }

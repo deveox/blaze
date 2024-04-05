@@ -10,58 +10,27 @@ import (
 	"github.com/deveox/gu/stringer"
 )
 
-type EmbeddedField struct {
-	Field *Field
-	Idx   []int
-}
-
-func (e *EmbeddedField) Value(v reflect.Value) reflect.Value {
-	for _, i := range e.Idx {
-		v = v.Field(i)
-		if v.Kind() == reflect.Ptr {
-			if v.IsNil() {
-				v.Set(reflect.New(v.Type().Elem()))
-			}
-			v = v.Elem()
-		}
-	}
-	return v
-}
-
 type Struct struct {
-	Type           reflect.Type
-	Fields         []*Field
-	EmbeddedFields []*EmbeddedField
+	Type   reflect.Type
+	Fields []*StructField
 }
 
-func (c *Struct) GetField(name string) (*Field, *EmbeddedField, bool) {
+func (c *Struct) GetField(name string) (*StructField, bool) {
 	for _, f := range c.Fields {
-		if f.Name == name {
-			return f, nil, true
-		}
-	}
-	for _, f := range c.EmbeddedFields {
 		if f.Field.Name == name {
-			return f.Field, f, true
+			return f, true
 		}
 	}
-	return nil, nil, false
+	return nil, false
 }
 
-func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scopes.Decoding) (*Field, *EmbeddedField, bool) {
+func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scopes.Decoding) (*StructField, bool) {
 	for _, f := range c.Fields {
-		if f.Name == name {
-
-			return f, nil, f.CheckDecoderScope(context, scope)
-		}
-	}
-
-	for _, f := range c.EmbeddedFields {
 		if f.Field.Name == name {
-			return f.Field, f, f.Field.CheckDecoderScope(context, scope)
+			return f, f.Field.CheckDecoderScope(context, scope)
 		}
 	}
-	return nil, nil, false
+	return nil, false
 }
 
 func NewStruct(t reflect.Type) *Struct {
@@ -72,11 +41,21 @@ func NewStruct(t reflect.Type) *Struct {
 
 func (s *Struct) init() {
 	n := s.Type.NumField()
-	s.Fields = make([]*Field, 0, n)
+	s.Fields = make([]*StructField, 0, n)
 	for i := 0; i < n; i++ {
 		f := s.Type.Field(i)
 		s.initField(f)
 	}
+}
+
+func (s *Struct) AddField(f *StructField) {
+	for i, ff := range s.Fields {
+		if ff.Field.Name == f.Field.Name {
+			s.Fields[i] = f
+			return
+		}
+	}
+	s.Fields = append(s.Fields, f)
 }
 
 func (c *Struct) initField(f reflect.StructField) {
@@ -87,35 +66,38 @@ func (c *Struct) initField(f reflect.StructField) {
 	}
 	ft := mirror.DerefType(f.Type)
 
-	res := &Field{
-		Type:      f.Type,
-		Idx:       f.Index[0],
-		Anonymous: f.Anonymous,
+	res := &StructField{
+		Field: &Field{Type: f.Type},
+		Idx:   f.Index,
 	}
-	res.ParseTag(f.Tag)
+	anonymous := f.Anonymous
+	res.Field.ParseTag(f.Tag)
 
-	if res.Name == "" {
-		res.Name = stringer.ToCamelCase(f.Name)
+	if res.Field.Name == "" {
+		res.Field.Name = stringer.ToCamelCase(f.Name)
+	} else {
+		anonymous = false
 	}
 
 	if ft.Kind() == reflect.Struct {
 		if ft != c.Type {
 			s := Cache.Get(f.Type)
-			res.Struct = s
-			if res.Anonymous {
+			res.Field.Struct = s
+			if anonymous {
 				for _, f := range s.Fields {
-					c.EmbeddedFields = append(c.EmbeddedFields, &EmbeddedField{Field: f, Idx: []int{res.Idx, f.Idx}})
+					c.AddField(&StructField{Field: f.Field, Idx: append(res.Idx, f.Idx...)})
 				}
-				for _, f := range s.EmbeddedFields {
-					c.EmbeddedFields = append(c.EmbeddedFields, &EmbeddedField{Field: f.Field, Idx: append([]int{res.Idx}, f.Idx...)})
-				}
+				// Do not add the struct as a field if it's embedded
+				return
 			}
 		} else {
-			res.Struct = c
+			if anonymous {
+				// Ignore self embedding
+				return
+			}
+			res.Field.Struct = c
 		}
-
 	}
-	res.ObjectKey = []byte(fmt.Sprintf("\"%s\":", res.Name))
-
-	c.Fields = append(c.Fields, res)
+	res.Field.ObjectKey = []byte(fmt.Sprintf("\"%s\":", res.Field.Name))
+	c.AddField(res)
 }

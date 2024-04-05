@@ -14,6 +14,7 @@ type Encoder struct {
 	config    *Config
 	bytes     []byte
 	depth     int
+	fields    *fields
 	anonymous bool
 }
 
@@ -68,13 +69,22 @@ func AddIndent(b []byte) []byte {
 		if b[i] == '{' || b[i] == '[' {
 			depth++
 			res = append(res, b[i], '\n')
+			for j := 0; j < depth-1; j++ {
+				res = append(res, '\t')
+			}
 
 		} else if b[i] == '}' || b[i] == ']' {
+			depth--
 			res = append(res, '\n')
-
+			for j := 0; j < depth-1; j++ {
+				res = append(res, '\t')
+			}
 			res = append(res, b[i])
 		} else if b[i] == ',' {
 			res = append(res, b[i], '\n')
+			for j := 0; j < depth-1; j++ {
+				res = append(res, '\t')
+			}
 		} else {
 			res = append(res, b[i])
 		}

@@ -18,6 +18,7 @@ const (
 	TAG_SV_CREATE    = "create"
 	TAG_SV_UPDATE    = "update"
 	TAG_SV_ALL       = "all"
+	TAG_SHORT        = "short"
 )
 
 func tagPartToOperation(s string) Operation {

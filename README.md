@@ -217,6 +217,37 @@ func (*MyStruct) UnmarshalBlaze(d *decoder.Decoder, data []byte) error {
 }
 ```
 
+### Partial marshaling
+In Blaze you can marshal only a part of the struct. This can be useful when you want to send only a part of the struct to the client. You can implement GraphQL-like queries using this feature. 
+
+There are two types of partial marshaling, which can be used together:
+- **Short** - you can specify fields you want to include to the short output using `blaze:"short"`. It's useful when you need to define short version of the struct statically.
+- **Fields** - you can provide an array of fields you want to include in the output *(e.g. `[]string{"name","nested.email"}`)*. It's useful when you need to define the fields dynamically. Nested fields are supported and can be accessed using dot notation.
+
+```go
+
+type Nested struct {
+    Age int  `blaze:"short"`
+    Email string
+}
+
+type User struct {
+    ID int `blaze:"short"`
+    Name string `blaze:"short"`
+    Role string
+    Nested Nested `blaze:"short"`
+}
+
+blaze.MarshalPartial(v, []string{"name", "nested.email"}, false)
+// results in {"name":"John", "nested":{"email":"email@gmail.com"}}
+
+blaze.MarshalPartial(v, nil, true)
+// results in {"id":1, "name":"John", "nested":{"age":25}}
+
+blaze.MarshalPartial(v, []string{"name", "nested.age"}, true)
+// results in {"name":"John", "nested":{"age":25, "email":"email@gmail.com"}}
+```
+
 ## Non-standard behavior
 
 ### Deserialization

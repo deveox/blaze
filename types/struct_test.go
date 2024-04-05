@@ -96,7 +96,7 @@ func TestNewStruct(t *testing.T) {
 	require.True(t, ok, "noneJson is not found")
 	require.Equal(t, OPERATION_IGNORE, f.Field.ClientScope)
 	require.Equal(t, OPERATION_IGNORE, f.Field.AdminScope)
-	require.False(t, f.Field.DB)
+	require.False(t, f.Field.DBScope)
 
 	f, ok = s.GetField("hardCamelCase")
 	require.True(t, ok, "hardCamelCase not found")
@@ -108,7 +108,7 @@ func TestNewStruct(t *testing.T) {
 
 	f, ok = s.GetField("noDb")
 	require.True(t, ok, "noDb not found")
-	require.False(t, f.Field.DB, "noDb has DB true")
+	require.False(t, f.Field.DBScope, "noDb has DB true")
 
 	f, ok = s.GetField("noHttp")
 	require.True(t, ok, "noHttp not found")
@@ -134,7 +134,7 @@ func TestNewStruct(t *testing.T) {
 	require.True(t, ok, "none is found")
 	require.Equal(t, OPERATION_IGNORE, f.Field.ClientScope, "none client scope is wrong")
 	require.Equal(t, OPERATION_IGNORE, f.Field.AdminScope, "none admin scope is wrong")
-	require.False(t, f.Field.DB, "none has DB true")
+	require.False(t, f.Field.DBScope, "none has DB true")
 
 	f, ok = s.GetField("readOnly")
 	require.True(t, ok, "readOnly not found")

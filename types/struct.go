@@ -11,8 +11,9 @@ import (
 )
 
 type Struct struct {
-	Type   reflect.Type
-	Fields []*StructField
+	Type        reflect.Type
+	Fields      []*StructField
+	ByCamelName map[string]*StructField
 }
 
 func (c *Struct) GetField(name string) (*StructField, bool) {
@@ -46,6 +47,10 @@ func (s *Struct) init() {
 		f := s.Type.Field(i)
 		s.initField(f)
 	}
+	s.ByCamelName = make(map[string]*StructField, len(s.Fields))
+	for _, f := range s.Fields {
+		s.ByCamelName[f.Field.Name] = f
+	}
 }
 
 func (s *Struct) AddField(f *StructField) {
@@ -67,8 +72,9 @@ func (c *Struct) initField(f reflect.StructField) {
 	ft := mirror.DerefType(f.Type)
 
 	res := &StructField{
-		Field: &Field{Type: f.Type},
-		Idx:   f.Index,
+		Anonymous: f.Anonymous,
+		Field:     &Field{Type: f.Type, TitleCase: f.Name},
+		Idx:       f.Index,
 	}
 	anonymous := f.Anonymous
 	res.Field.ParseTag(f.Tag)
@@ -85,7 +91,7 @@ func (c *Struct) initField(f reflect.StructField) {
 			res.Field.Struct = s
 			if anonymous {
 				for _, f := range s.Fields {
-					c.AddField(&StructField{Field: f.Field, Idx: append(res.Idx, f.Idx...)})
+					c.AddField(&StructField{Field: f.Field, Anonymous: true, Idx: append(res.Idx, f.Idx...)})
 				}
 				// Do not add the struct as a field if it's embedded
 				return
@@ -98,6 +104,8 @@ func (c *Struct) initField(f reflect.StructField) {
 			res.Field.Struct = c
 		}
 	}
+
 	res.Field.ObjectKey = []byte(fmt.Sprintf("\"%s\":", res.Field.Name))
+	res.Field.DBName = GetDBName(f, res)
 	c.AddField(res)
 }

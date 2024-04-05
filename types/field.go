@@ -5,11 +5,31 @@ import (
 	"strings"
 
 	"github.com/deveox/blaze/scopes"
+	"github.com/deveox/gu/stringer"
 )
 
+var GetDBName = func(f reflect.StructField, fi *StructField) string {
+	gorm := f.Tag.Get("gorm")
+	if gorm != "" {
+		for {
+			var s string
+			s, gorm, _ = strings.Cut(gorm, ";")
+			col, name, _ := strings.Cut(s, ":")
+			if col == "column" && name != "" {
+				return name
+			}
+			if gorm == "" {
+				break
+			}
+		}
+	}
+	return stringer.ToSnakeCase(f.Name)
+}
+
 type StructField struct {
-	Field *Field
-	Idx   []int
+	Field     *Field
+	Anonymous bool
+	Idx       []int
 }
 
 func (e *StructField) Value(v reflect.Value) reflect.Value {
@@ -26,10 +46,11 @@ func (e *StructField) Value(v reflect.Value) reflect.Value {
 }
 
 type Field struct {
+	TitleCase string
 	Name      string
 	ObjectKey []byte
 
-	DB          bool
+	DBScope     bool
 	ClientScope Operation
 	AdminScope  Operation
 
@@ -37,12 +58,13 @@ type Field struct {
 	Struct    *Struct
 	Type      reflect.Type
 	Short     bool
+	DBName    string
 }
 
 func (f *Field) CheckEncoderScope(context scopes.Context) bool {
 	switch context {
 	case scopes.CONTEXT_DB:
-		return f.DB
+		return f.DBScope
 	case scopes.CONTEXT_CLIENT:
 		return f.ClientScope.CanRead()
 	case scopes.CONTEXT_ADMIN:
@@ -54,7 +76,7 @@ func (f *Field) CheckEncoderScope(context scopes.Context) bool {
 func (f *Field) CheckDecoderScope(context scopes.Context, scope scopes.Decoding) bool {
 	switch context {
 	case scopes.CONTEXT_DB:
-		return f.DB
+		return f.DBScope
 	case scopes.CONTEXT_CLIENT:
 		return f.ClientScope.CanWrite(scope)
 	case scopes.CONTEXT_ADMIN:
@@ -69,10 +91,10 @@ func (f *Field) ParseTag(st reflect.StructTag) {
 	if jsonTag == "-" || tag == "-" {
 		f.ClientScope = OPERATION_IGNORE
 		f.AdminScope = OPERATION_IGNORE
-		f.DB = false
+		f.DBScope = false
 		return
 	}
-	f.DB = true
+	f.DBScope = true
 	f.Name, _, _ = strings.Cut(jsonTag, ",")
 loop:
 	for {
@@ -88,7 +110,7 @@ loop:
 		case "omit":
 			f.KeepEmpty = false
 		case TAG_NO_DB:
-			f.DB = false
+			f.DBScope = false
 		case TAG_NO_HTTP:
 			f.ClientScope = OPERATION_IGNORE
 			f.AdminScope = OPERATION_IGNORE

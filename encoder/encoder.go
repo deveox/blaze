@@ -56,7 +56,7 @@ func (e *Encoder) EncodePartial(v any, fields []string, short int) error {
 	oldFields := *e.fields
 	if e.fields.currentPath != "" {
 		for _, f := range fields {
-			e.fields.AddNested(e.fields.currentPath+"."+f, true)
+			e.fields.fields = append(e.fields.fields, e.fields.currentPath+"."+f)
 		}
 	} else {
 		e.fields.fields = append(e.fields.fields, fields...)

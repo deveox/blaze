@@ -245,7 +245,10 @@ blaze.MarshalPartial(v, nil, true)
 // results in {"id":1, "name":"John", "nested":{"age":25}}
 
 blaze.MarshalPartial(v, []string{"name", "nested.email"}, true)
-// results in {"name":"John", "nested":{"age":25, "email":"email@gmail.com"}}
+// results in {"id":1,"name":"John", "nested":{"age":25, "email":"email@gmail.com"}}
+
+blaze.MarshalPartial(v, []string{"name", "nested"}, false)
+// results in {"id":1."name":"John", "nested":{"age":25, "email":"email@gmail.com"}}
 
 ```
 ### Context 

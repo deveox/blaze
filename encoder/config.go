@@ -18,12 +18,13 @@ func (c *Config) NewEncoder() *Encoder {
 		e.bytes = e.bytes[:0]
 		e.depth = 0
 		e.fields.short = false
+		e.fields.enabled = false
 		if len(e.fields.fields) > 0 {
 			e.fields.fields = e.fields.fields[:0]
 		}
 		return e
 	}
-	e := &Encoder{bytes: make([]byte, 0, 2048), config: c, fields: &fields{}, Ctx: &ctx.Ctx{}}
+	e := &Encoder{bytes: make([]byte, 0, 2048), config: c, fields: &fields{fields: make([]string, 0, 20)}, Ctx: &ctx.Ctx{}}
 	return e
 }
 

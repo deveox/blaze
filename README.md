@@ -1,5 +1,9 @@
 # Blaze - JSON serializer and deserializer
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/deveox/blaze.svg)](https://pkg.go.dev/github.com/deveox/blaze)
+![GitHub Release](https://img.shields.io/github/v/release/deveox/blaze)
+
+
 The idea behind Blaze is to provide a JSON (de)serializer which can reduce amount of `structs` needed for different API endpoints and contexts. It's designed to be used in REST API and databases that support JSON data types.
 
 It's not a drop-in replacement for standard library, though migration shouldn't be hard. Perfomance is generally better around 20%-100% for deserialization and 10%-25% for serialization. Blaze is also more memory efficient.

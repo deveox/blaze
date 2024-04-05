@@ -18,6 +18,18 @@ type Encoder struct {
 	anonymous bool
 }
 
+// GetCurrentPath will return the path of the current field being encoded if encoder is created by MarshalPartial
+// Otherwise it will return an empty string
+func (e *Encoder) GetCurrentPath() string {
+	return e.fields.currentPath
+}
+
+// GetFields will return the fields that should be encoded if encoder is created by MarshalPartial
+// Otherwise it will return an empty slice
+func (e *Encoder) GetFields() []string {
+	return e.fields.fields
+}
+
 func (e *Encoder) Context() scopes.Context {
 	return e.config.Scope
 }
@@ -26,8 +38,37 @@ func (e *Encoder) Marshal(v any) ([]byte, error) {
 	return e.config.Marshal(v)
 }
 
+func (e *Encoder) MarshalPartial(v any, fields []string, short bool) ([]byte, error) {
+	return e.config.MarshalPartial(v, fields, short)
+}
+
 func (e *Encoder) Encode(v any) error {
 	return e.encode(reflect.ValueOf(v))
+}
+
+// EncodePartial works like MarshalPartial but it will respect partial settings of the encoder
+// If fields were set by MarshalPartial, it will preserve them.
+// If you set short parameter to nill, it will use the short setting of the encoder, otherwise it will use the short parameter
+// If you pass fields, their names will be prepended with the current path of the encoder
+func (e *Encoder) EncodePartial(v any, fields []string, short *bool) error {
+	oldFields := *e.fields
+	if e.fields.currentPath != "" {
+		for _, f := range fields {
+			e.fields.AddNested(e.fields.currentPath+"."+f, true)
+		}
+	} else {
+		e.fields.fields = append(e.fields.fields, fields...)
+	}
+	if short != nil {
+		e.fields.short = *short
+	}
+
+	err := e.encode(reflect.ValueOf(v))
+	if err != nil {
+		return err
+	}
+	*e.fields = oldFields
+	return nil
 }
 
 func (e *Encoder) marshal(v any) ([]byte, error) {

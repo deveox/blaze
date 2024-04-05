@@ -40,14 +40,21 @@ func (e *fields) Init(fields []string, short bool) {
 	e.fields = fields
 	e.short = short
 	for _, f := range e.fields {
-		if strings.Contains(f, ".") {
-			parts := strings.Split(f, ".")
-			for i := 0; i < len(parts)-1; i++ {
-				field := strings.Join(parts[:i+1], ".")
-				if !e.has(field) {
-					e.fields = append(e.fields, field)
-				}
+		e.AddNested(f, false)
+	}
+}
+
+func (e *fields) AddNested(field string, addNotNested bool) {
+	if strings.Contains(field, ".") {
+		parts := strings.Split(field, ".")
+		for i := 0; i < len(parts)-1; i++ {
+			field := strings.Join(parts[:i+1], ".")
+			if !e.has(field) {
+				e.fields = append(e.fields, field)
 			}
 		}
+	}
+	if addNotNested {
+		e.fields = append(e.fields, field)
 	}
 }

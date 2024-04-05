@@ -26,6 +26,7 @@ var GetDBName = func(f reflect.StructField, fi *StructField) string {
 	return stringer.ToSnakeCase(f.Name)
 }
 
+// StructField represents a field instance in a particular struct.
 type StructField struct {
 	Field     *Field
 	Anonymous bool

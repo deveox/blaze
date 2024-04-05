@@ -34,10 +34,15 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 			continue
 		}
 		e.Write(fi.Field.ObjectKey)
+		oldLen := len(e.bytes)
 		if err := e.encode(f); err != nil {
 			return err
 		}
-		e.WriteByte(',')
+		if len(e.bytes) == oldLen {
+			e.bytes = e.bytes[:len(e.bytes)-len(fi.Field.ObjectKey)]
+		} else {
+			e.WriteByte(',')
+		}
 	}
 	e.fields.currentPath = path
 	last := len(e.bytes) - 1

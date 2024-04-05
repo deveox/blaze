@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/deveox/blaze/ctx"
 	"github.com/deveox/blaze/scopes"
 )
 
 const MAX_DEPTH = 10000
 
 type Encoder struct {
+	*ctx.Ctx
 	config    *Config
 	bytes     []byte
 	depth     int
@@ -35,11 +37,11 @@ func (e *Encoder) Context() scopes.Context {
 }
 
 func (e *Encoder) Marshal(v any) ([]byte, error) {
-	return e.config.Marshal(v)
+	return e.config.MarshalCtx(v, e.Ctx)
 }
 
 func (e *Encoder) MarshalPartial(v any, fields []string, short bool) ([]byte, error) {
-	return e.config.MarshalPartial(v, fields, short)
+	return e.config.MarshalPartialCtx(v, fields, short, e.Ctx)
 }
 
 func (e *Encoder) Encode(v any) error {

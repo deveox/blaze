@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"unsafe"
 
+	"github.com/deveox/blaze/ctx"
 	"github.com/deveox/blaze/scopes"
 )
 
@@ -14,6 +15,7 @@ const TERMINATION_CHAR = '\000'
 const MAX_DEPTH = 1000
 
 type Decoder struct {
+	*ctx.Ctx
 	config        *Config
 	depth         int
 	Buf           []byte
@@ -26,19 +28,19 @@ type Decoder struct {
 }
 
 func (d *Decoder) Unmarshal(data []byte, v any) error {
-	return d.config.UnmarshalScoped(data, v, d.operation)
+	return d.config.UnmarshalScopedCtx(data, v, d.operation, d.Ctx)
 }
 
 func (d *Decoder) UnmarshalScoped(data []byte, v any, operation scopes.Decoding) error {
-	return d.config.UnmarshalScoped(data, v, operation)
+	return d.config.UnmarshalScopedCtx(data, v, operation, d.Ctx)
 }
 
 func (d *Decoder) UnmarshalScopedWithChanges(data []byte, v any, operation scopes.Decoding) ([]string, error) {
-	return d.config.UnmarshalScopedWithChanges(data, v, operation)
+	return d.config.UnmarshalScopedWithChangesCtx(data, v, operation, d.Ctx)
 }
 
 func (d *Decoder) UnmarshalWithChanges(data []byte, v any) ([]string, error) {
-	return d.config.UnmarshalScopedWithChanges(data, v, d.operation)
+	return d.config.UnmarshalScopedWithChangesCtx(data, v, d.operation, d.Ctx)
 }
 
 func (d *Decoder) Context() scopes.Context {

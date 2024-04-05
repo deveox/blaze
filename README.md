@@ -248,6 +248,34 @@ blaze.MarshalPartial(v, []string{"name", "nested.email"}, true)
 // results in {"name":"John", "nested":{"age":25, "email":"email@gmail.com"}}
 
 ```
+### Context 
+Both decoder and encoder can have a context. Context is a key-value store where you can put any data you want.
+
+```go
+// d can be *encoder.Encoder or *decoder.Decoder
+d.Set("myKey", 123)
+d.Get("myKey") // 123
+d.Unset("myKey") // remove key and free memory
+d.Clear() // remove all keys 
+
+// You can access context from the custom (de)serializer
+func (*MyStruct) MarshalBlaze(d *encoder.Encoder) error {
+    // ok will be false if key doesn't exist
+    ok, myValue := d.Get("myKey")
+    // assert the type
+    i, ok := myValue.(int)
+    // For your convinience, you can use helper
+    i, ok := blaze.EncCtx[int](d, "myKey")
+}
+
+func (*MyStruct) UnmarshalBlaze(d *decoder.Decoder, data []byte) error {
+    ok, myValue := d.Get("myKey")
+    i, ok := myValue.(int)
+    // or 
+    i, ok := blaze.DecCtx[int](d, "myKey")
+}
+
+```
 
 ## Non-standard behavior
 

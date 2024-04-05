@@ -50,9 +50,9 @@ func (e *Encoder) Encode(v any) error {
 
 // EncodePartial works like MarshalPartial but it will respect partial settings of the encoder
 // If fields were set by MarshalPartial, it will preserve them.
-// If you set short parameter to nill, it will use the short setting of the encoder, otherwise it will use the short parameter
+// If you set short parameter to 1 it will use short encoding for the fields, 0 will not use short encoding, -1 will preserve the current setting
 // If you pass fields, their names will be prepended with the current path of the encoder
-func (e *Encoder) EncodePartial(v any, fields []string, short *bool) error {
+func (e *Encoder) EncodePartial(v any, fields []string, short int) error {
 	oldFields := *e.fields
 	if e.fields.currentPath != "" {
 		for _, f := range fields {
@@ -61,8 +61,10 @@ func (e *Encoder) EncodePartial(v any, fields []string, short *bool) error {
 	} else {
 		e.fields.fields = append(e.fields.fields, fields...)
 	}
-	if short != nil {
-		e.fields.short = *short
+	if short == 1 {
+		e.fields.short = true
+	} else if short == 0 {
+		e.fields.short = false
 	}
 
 	err := e.encode(reflect.ValueOf(v))

@@ -246,6 +246,7 @@ blaze.MarshalPartial(v, nil, true)
 
 blaze.MarshalPartial(v, []string{"name", "nested.age"}, true)
 // results in {"name":"John", "nested":{"age":25, "email":"email@gmail.com"}}
+
 ```
 
 ## Non-standard behavior

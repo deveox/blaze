@@ -1,7 +1,6 @@
 package encoder
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/deveox/blaze/types"
@@ -78,10 +77,8 @@ func encodeStructField(e *Encoder, v reflect.Value, fi *types.StructField, kind 
 			if !e.fields.Has(fi.Field.Name, fi.Field.Short) {
 				return nil
 			}
-			fmt.Println(enabled, fi.Field.Name, fi.Field.Short)
 		}
 	}
-	fmt.Println(enabled, fi.Field.Name)
 	e.Write(fi.Field.ObjectKey)
 	oldLen := len(e.bytes)
 	if err := e.encode(v); err != nil {

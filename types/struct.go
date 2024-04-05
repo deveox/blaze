@@ -109,7 +109,7 @@ func (c *Struct) initField(f reflect.StructField) {
 
 	res := &StructField{
 		Anonymous: f.Anonymous,
-		Field:     &Field{Type: f.Type, TitleCase: f.Name},
+		Field:     &Field{Type: ft, Kind: ft.Kind(), TitleCase: f.Name},
 		Idx:       f.Index,
 	}
 	anonymous := f.Anonymous
@@ -121,9 +121,9 @@ func (c *Struct) initField(f reflect.StructField) {
 		anonymous = false
 	}
 
-	if ft.Kind() == reflect.Struct {
+	if res.Field.Kind == reflect.Struct {
 		if ft != c.Type {
-			s := Cache.Get(f.Type)
+			s := Cache.Get(ft)
 			res.Field.Struct = s
 			if anonymous {
 				for _, f := range s.Fields {

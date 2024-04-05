@@ -32,6 +32,21 @@ type StructField struct {
 	Idx       []int
 }
 
+func (e *StructField) PostgreSQLType() string {
+	switch e.Field.Kind {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		return "::INTEGER"
+	case reflect.Int64, reflect.Uint64:
+		return "::BIGINT"
+	case reflect.Float32, reflect.Float64:
+		return "::NUMERIC"
+	case reflect.Bool:
+		return "::BOOLEAN"
+	default:
+		return "::TEXT"
+	}
+}
+
 func (e *StructField) Value(v reflect.Value) reflect.Value {
 	for _, i := range e.Idx {
 		if v.Kind() == reflect.Ptr {
@@ -57,6 +72,7 @@ type Field struct {
 	KeepEmpty bool
 	Struct    *Struct
 	Type      reflect.Type
+	Kind      reflect.Kind
 	Short     bool
 	DBName    string
 }

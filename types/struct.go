@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -26,26 +25,40 @@ func (c *Struct) GetField(name string) (*StructField, bool) {
 	return nil, false
 }
 
-func (c *Struct) GetFieldByPath(path string) (*StructField, bool) {
+func (c *Struct) GetFieldDBPath(path string, sep string) (*StructField, string, bool) {
 	if !strings.Contains(path, ".") {
-		return c.GetField(path)
+		s, ok := c.GetField(path)
+		if ok {
+			return s, s.Field.DBName, true
+		}
+		return s, "", false
 	}
 	parts := strings.Split(path, ".")
-	return c.getFieldByPath(parts)
+	return c.getFieldDBPath(parts, sep)
 }
 
-func (c *Struct) getFieldByPath(parts []string) (*StructField, bool) {
-	if len(parts) == 1 {
-		return c.GetField(parts[0])
-	}
+func (c *Struct) getFieldDBPath(parts []string, sep string) (*StructField, string, bool) {
 	f, ok := c.GetField(parts[0])
 	if !ok {
-		return nil, false
+		return f, "", false
+	}
+	if len(parts) == 1 {
+		if f.Field.Struct != nil {
+			return f, "", false
+		}
+		return f, f.Field.DBName, true
 	}
 	if f.Field.Struct == nil {
-		return nil, false
+		return nil, "", false
 	}
-	return f.Field.Struct.getFieldByPath(parts[1:])
+	f2, db, ok := f.Field.Struct.getFieldDBPath(parts[1:], sep)
+	if !ok {
+		return f2, "", false
+	}
+	if f.Anonymous {
+		return f2, db, true
+	}
+	return f2, f.Field.DBName + sep + db, true
 }
 
 func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scopes.Decoding) (*StructField, bool) {
@@ -114,7 +127,7 @@ func (c *Struct) initField(f reflect.StructField) {
 			res.Field.Struct = s
 			if anonymous {
 				for _, f := range s.Fields {
-					c.AddField(&StructField{Field: f.Field, Anonymous: true, Idx: append(res.Idx, f.Idx...)})
+					c.AddField(&StructField{Field: f.Field, Anonymous: f.Anonymous, Idx: append(res.Idx, f.Idx...)})
 				}
 				// Do not add the struct as a field if it's embedded
 				return
@@ -128,7 +141,7 @@ func (c *Struct) initField(f reflect.StructField) {
 		}
 	}
 
-	res.Field.ObjectKey = []byte(fmt.Sprintf("\"%s\":", res.Field.Name))
-	res.Field.DBName = GetDBName(f, res)
+	res.Field.ObjectKey = []byte(`"` + res.Field.Name + `":`)
+	res.Field.DBName = `"` + GetDBName(f, res) + `"`
 	c.AddField(res)
 }

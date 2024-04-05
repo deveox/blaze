@@ -20,11 +20,16 @@ type TestEmbed struct {
 	Created time.Time `json:"created"`
 }
 
+type TestEmbeddedNested struct {
+	MyIDName string
+}
+
 type TestStruct struct {
 	*TestEmbed
-	NoneJSON      string `json:"-"`
-	CustomName    int    `json:"adminAge"`
-	HARDCamelCase string
+	TestEmbeddedNested `json:"myNested"`
+	NoneJSON           string `json:"-"`
+	CustomName         int    `json:"adminAge"`
+	HARDCamelCase      string
 
 	Keep     string `blaze:"keep"`
 	NoDB     string `blaze:"no-db"`
@@ -261,4 +266,11 @@ func TestNewStruct(t *testing.T) {
 	require.Equal(t, OPERATION_ALL, f.Field.ClientScope, "adminReadCreateUpdate client scope is wrong")
 	require.Equal(t, OPERATION_ALL, f.Field.AdminScope, "adminReadCreateUpdate admin scope is wrong")
 
+	_, db, ok := s.GetFieldDBPath("nested.name", "->>")
+	require.True(t, ok, "nested.name not found")
+	require.Equal(t, `"nested"->>"name"`, db, "db name is wrong")
+
+	_, db, ok = s.GetFieldDBPath("myNested.myIdName", "->>")
+	require.True(t, ok, "myNested.myIdName not found")
+	require.Equal(t, `"my_id_name"`, db, "db name is wrong")
 }

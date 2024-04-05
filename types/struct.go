@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/deveox/blaze/scopes"
 
@@ -23,6 +24,28 @@ func (c *Struct) GetField(name string) (*StructField, bool) {
 		}
 	}
 	return nil, false
+}
+
+func (c *Struct) GetFieldByPath(path string) (*StructField, bool) {
+	if !strings.Contains(path, ".") {
+		return c.GetField(path)
+	}
+	parts := strings.Split(path, ".")
+	return c.getFieldByPath(parts)
+}
+
+func (c *Struct) getFieldByPath(parts []string) (*StructField, bool) {
+	if len(parts) == 1 {
+		return c.GetField(parts[0])
+	}
+	f, ok := c.GetField(parts[0])
+	if !ok {
+		return nil, false
+	}
+	if f.Field.Struct == nil {
+		return nil, false
+	}
+	return f.Field.Struct.getFieldByPath(parts[1:])
 }
 
 func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scopes.Decoding) (*StructField, bool) {

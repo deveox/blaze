@@ -13,16 +13,12 @@ import (
 type Struct struct {
 	Type        reflect.Type
 	Fields      []*StructField
-	ByCamelName map[string]*StructField
+	byCamelName map[string]*StructField
 }
 
 func (c *Struct) GetField(name string) (*StructField, bool) {
-	for _, f := range c.Fields {
-		if f.Field.Name == name {
-			return f, true
-		}
-	}
-	return nil, false
+	v, ok := c.byCamelName[name]
+	return v, ok
 }
 
 func (c *Struct) GetFieldDBPath(path string, sep string) (*StructField, string, bool) {
@@ -80,9 +76,9 @@ func (s *Struct) init() {
 		f := s.Type.Field(i)
 		s.initField(f)
 	}
-	s.ByCamelName = make(map[string]*StructField, len(s.Fields))
+	s.byCamelName = make(map[string]*StructField, len(s.Fields))
 	for _, f := range s.Fields {
-		s.ByCamelName[f.Field.Name] = f
+		s.byCamelName[f.Field.Name] = f
 	}
 }
 

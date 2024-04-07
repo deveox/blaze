@@ -1,11 +1,13 @@
 package ctx
 
+// Ctx is a context that can store key-value pairs.
 type Ctx struct {
 	*Ctx
 	key string
 	val any
 }
 
+// Set sets a key-value pair in the context.
 func (c *Ctx) Set(key string, val any) {
 	if key == "" {
 		c.key = key
@@ -27,6 +29,7 @@ func (c *Ctx) unset(key string) {
 	}
 }
 
+// Unset removes a key-value pair from the context.
 func (c *Ctx) Unset(key string) {
 	if c.key == key {
 		c.key = ""
@@ -35,6 +38,7 @@ func (c *Ctx) Unset(key string) {
 	}
 }
 
+// Get returns a value by its key.
 func (c *Ctx) Get(key string) (bool, any) {
 	if c.key == key {
 		return true, c.val
@@ -45,6 +49,7 @@ func (c *Ctx) Get(key string) (bool, any) {
 	return c.Ctx.Get(key)
 }
 
+// Clear removes all key-value pairs from the context.
 func (c *Ctx) Clear() {
 	c.Ctx = nil
 }

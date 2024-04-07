@@ -8,6 +8,8 @@ import (
 	"github.com/deveox/gu/stringer"
 )
 
+// GetDBName is a callback function that returns the database name of a field.
+// By default, it searches for the "column" tag in the field's gorm tag. If it is not found, it converts the [Field.Name] to snake case.
 var GetDBName = func(f reflect.StructField, fi *StructField) string {
 	gorm := f.Tag.Get("gorm")
 	if gorm != "" {
@@ -28,9 +30,12 @@ var GetDBName = func(f reflect.StructField, fi *StructField) string {
 
 // StructField represents a field instance in a particular struct.
 type StructField struct {
-	Field     *Field
+	// Link to the actual field definition. Each field stored once and shared between all structs.
+	Field *Field
+	// Shows if the field is anonymous (doesn't have name).
 	Anonymous bool
-	Idx       []int
+	// Reflect path to the field in the struct. Usually there's only one index, but in case of anonymous structs, there can be more.
+	Idx []int
 }
 
 func (e *StructField) PostgreSQLType() string {
@@ -48,6 +53,8 @@ func (e *StructField) PostgreSQLType() string {
 	}
 }
 
+// Value returns the [reflect.Value] of the field in the given struct.
+// Accepts a struct [reflect.Value].
 func (e *StructField) Value(v reflect.Value) reflect.Value {
 	for _, i := range e.Idx {
 		if v.Kind() == reflect.Ptr {
@@ -61,23 +68,35 @@ func (e *StructField) Value(v reflect.Value) reflect.Value {
 	return v
 }
 
+// Field represents a meta info about field in a struct.
 type Field struct {
+	// The native go name of the field.
 	TitleCase string
-	Name      string
+	// The name of the field in the JSON representation. If not set in `json` tag, it will be converted from [Field.TitleCase] to camelCase.
+	Name string
+	// Precomputed key for the field in the json object.
 	ObjectKey []byte
 
-	DBScope     bool
+	// Defines if the field should be included in the database JSON.
+	DBScope bool
+	// Defines if the field should be included in the client marshaling/unmarshaling
 	ClientScope Operation
-	AdminScope  Operation
+	// Defines if the field should be included in the admin marshaling/unmarshaling
+	AdminScope Operation
 
+	// Defines if the field should be kept in the JSON object even if it's empty.
 	KeepEmpty bool
-	Struct    *Struct
-	Type      reflect.Type
-	Kind      reflect.Kind
-	Short     bool
-	DBName    string
+	// If the field is a struct, then it will point to the struct definition. Otherwise, it will be nil.
+	Struct *Struct
+	Type   reflect.Type
+	Kind   reflect.Kind
+	// Defines if the field should be marshaled as a short version.
+	Short bool
+	// The database name of the field. Populated by [GetDBName] function.
+	DBName string
 }
 
+// CheckEncoderScope checks if the field can be encoded in the given context.
 func (f *Field) CheckEncoderScope(context scopes.Context) bool {
 	switch context {
 	case scopes.CONTEXT_DB:
@@ -90,6 +109,7 @@ func (f *Field) CheckEncoderScope(context scopes.Context) bool {
 	return false
 }
 
+// CheckDecoderScope checks if the field can be decoded in the given context.
 func (f *Field) CheckDecoderScope(context scopes.Context, scope scopes.Decoding) bool {
 	switch context {
 	case scopes.CONTEXT_DB:
@@ -102,6 +122,7 @@ func (f *Field) CheckDecoderScope(context scopes.Context, scope scopes.Decoding)
 	return false
 }
 
+// ParseTag parses the struct tag and populates the field with the data.
 func (f *Field) ParseTag(st reflect.StructTag) {
 	jsonTag := st.Get(TAG_NAME_JSON)
 	tag := st.Get(TAG_NAME_BLAZE)

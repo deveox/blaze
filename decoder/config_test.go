@@ -3,8 +3,8 @@ package decoder
 import (
 	"testing"
 
+	"github.com/deveox/blaze/internal/testdata"
 	"github.com/deveox/blaze/scopes"
-	"github.com/deveox/blaze/testdata"
 	"github.com/stretchr/testify/require"
 )
 

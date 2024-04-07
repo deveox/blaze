@@ -10,17 +10,23 @@ import (
 	"github.com/deveox/gu/stringer"
 )
 
+// Struct represents a type meta information of a struct.
 type Struct struct {
-	Type        reflect.Type
+	Type reflect.Type
+	// Fields is a list of fields in the struct.
 	Fields      []*StructField
 	byCamelName map[string]*StructField
 }
 
+// GetField returns a field by its name. If the field is not found, the second return value is [false].
 func (c *Struct) GetField(name string) (*StructField, bool) {
 	v, ok := c.byCamelName[name]
 	return v, ok
 }
 
+// GetFieldDBPath returns a field by its path. The path can be a dot-separated string of field names, e.g. "user.address.phoneNumber".
+// The second return value is the database name of the field. It will use the [sep] as a separator, e.g. `"user"->"address"->"phone_number"`.
+// The third return value is [true] if the field is found.
 func (c *Struct) GetFieldDBPath(path string, sep string) (*StructField, string, bool) {
 	if !strings.Contains(path, ".") {
 		s, ok := c.GetField(path)
@@ -54,6 +60,7 @@ func (c *Struct) getFieldDBPath(parts []string, sep string) (*StructField, strin
 	return f2, f.Field.DBName + sep + db, true
 }
 
+// GetDecoderField returns a field by its name. The field must be accessible in the given scope.
 func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scopes.Decoding) (*StructField, bool) {
 	for _, f := range c.Fields {
 		if f.Field.Name == name {
@@ -63,7 +70,7 @@ func (c *Struct) GetDecoderField(name string, context scopes.Context, scope scop
 	return nil, false
 }
 
-func NewStruct(t reflect.Type) *Struct {
+func newStruct(t reflect.Type) *Struct {
 	return &Struct{
 		Type: t,
 	}
@@ -82,7 +89,7 @@ func (s *Struct) init() {
 	}
 }
 
-func (s *Struct) AddField(f *StructField) {
+func (s *Struct) addField(f *StructField) {
 	for i, ff := range s.Fields {
 		if ff.Field.Name == f.Field.Name {
 			s.Fields[i] = f
@@ -120,7 +127,7 @@ func (c *Struct) initField(f reflect.StructField) {
 			res.Field.Struct = s
 			if anonymous {
 				for _, f := range s.Fields {
-					c.AddField(&StructField{Field: f.Field, Anonymous: f.Anonymous, Idx: append(res.Idx, f.Idx...)})
+					c.addField(&StructField{Field: f.Field, Anonymous: f.Anonymous, Idx: append(res.Idx, f.Idx...)})
 				}
 				// Do not add the struct as a field if it's embedded
 				return
@@ -136,5 +143,5 @@ func (c *Struct) initField(f reflect.StructField) {
 
 	res.Field.ObjectKey = []byte(`"` + res.Field.Name + `":`)
 	res.Field.DBName = `"` + GetDBName(f, res) + `"`
-	c.AddField(res)
+	c.addField(res)
 }

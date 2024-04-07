@@ -50,14 +50,33 @@ func (c *Struct) getFieldDBPath(parts []string, sep string) (*StructField, strin
 	if f.Field.Struct == nil {
 		return nil, "", false
 	}
-	f2, db, ok := f.Field.Struct.getFieldDBPath(parts[1:], sep)
+	if f.Anonymous {
+		return c.getFieldDBPath(parts[1:], sep)
+	}
+	f2, db, ok := f.Field.Struct.getFieldDBJSONPath(parts[1:], sep)
 	if !ok {
 		return f2, "", false
 	}
-	if f.Anonymous {
-		return f2, db, true
-	}
 	return f2, f.Field.DBName + sep + db, true
+}
+
+func (c *Struct) getFieldDBJSONPath(parts []string, sep string) (*StructField, string, bool) {
+	f, ok := c.GetField(parts[0])
+	if !ok {
+		return f, "", false
+	}
+	name := "'" + f.Field.Name + "'"
+	if len(parts) == 1 {
+		return f, name, true
+	}
+	if f.Field.Struct == nil {
+		return nil, "", false
+	}
+	f2, db, ok := f.Field.Struct.getFieldDBJSONPath(parts[1:], sep)
+	if !ok {
+		return f2, "", false
+	}
+	return f2, name + sep + db, true
 }
 
 // GetDecoderField returns a field by its name. The field must be accessible in the given scope.

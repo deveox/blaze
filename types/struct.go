@@ -43,9 +43,6 @@ func (c *Struct) getFieldDBPath(parts []string, sep string) (*StructField, strin
 		return f, "", false
 	}
 	if len(parts) == 1 {
-		if f.Field.Struct != nil {
-			return f, "", false
-		}
 		return f, f.Field.DBName, true
 	}
 	if f.Field.Struct == nil {

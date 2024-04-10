@@ -51,7 +51,7 @@ func (c *Struct) getFieldDBPath(parts []string, sep string) (*StructField, strin
 		return nil, "", false
 	}
 	if f.Anonymous {
-		return c.getFieldDBPath(parts[1:], sep)
+		return f.Field.Struct.getFieldDBPath(parts[1:], sep)
 	}
 	f2, db, ok := f.Field.Struct.getFieldDBJSONPath(parts[1:], sep)
 	if !ok {

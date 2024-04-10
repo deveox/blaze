@@ -35,7 +35,7 @@ type TestStruct struct {
 	NoDB     string `blaze:"no-db"`
 	NoHttp   string `blaze:"no-http"`
 	NoAdmin  string `blaze:"admin:-"`
-	NoClient string `blaze:"client:-"`
+	NoClient string `blaze:"admin:read,client:-"`
 
 	All              string `blaze:"all"`
 	None             string `blaze:"-"`
@@ -128,7 +128,7 @@ func TestNewStruct(t *testing.T) {
 	f, ok = s.GetField("noClient")
 	require.True(t, ok, "noClient not found")
 	require.Equal(t, OPERATION_IGNORE, f.Field.ClientScope, "noClient client scope is wrong")
-	require.Equal(t, OPERATION_ALL, f.Field.AdminScope, "noClient admin scope is wrong")
+	require.Equal(t, OPERATION_READ, f.Field.AdminScope, "noClient admin scope is wrong")
 
 	f, ok = s.GetField("all")
 	require.True(t, ok, "all not found")
@@ -268,7 +268,7 @@ func TestNewStruct(t *testing.T) {
 
 	_, db, ok := s.GetFieldDBPath("nested.name", "->>")
 	require.True(t, ok, "nested.name not found")
-	require.Equal(t, `"nested"->>"name"`, db, "db name is wrong")
+	require.Equal(t, `"nested"->>'name'`, db, "db name is wrong")
 
 	_, db, ok = s.GetFieldDBPath("myNested.myIdName", "->>")
 	require.True(t, ok, "myNested.myIdName not found")

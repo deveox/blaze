@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -22,6 +23,33 @@ type Struct struct {
 func (c *Struct) GetField(name string) (*StructField, bool) {
 	v, ok := c.byCamelName[name]
 	return v, ok
+}
+
+type NestedField struct {
+	Path  string
+	Field *StructField
+}
+
+// GetNestedFields returns a list of all fields in the struct and its nested structs. Paths are dot-separated, e.g. "user.address.phoneNumber".
+func (c *Struct) GetNestedFields() []NestedField {
+	fields := make([]NestedField, 0, len(c.Fields))
+	for _, f := range c.Fields {
+		if f.Field.Struct != nil && !f.Anonymous {
+			ff := f.Field.Struct.GetNestedFields()
+			for _, nf := range ff {
+				fields = append(fields, NestedField{
+					Path:  fmt.Sprintf("%s.%s", f.Field.Name, nf.Path),
+					Field: nf.Field,
+				})
+			}
+		} else {
+			fields = append(fields, NestedField{
+				Path:  f.Field.Name,
+				Field: f,
+			})
+		}
+	}
+	return fields
 }
 
 // GetFieldDBPath returns a field by its path. The path can be a dot-separated string of field names, e.g. "user.address.phoneNumber".

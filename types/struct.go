@@ -31,11 +31,17 @@ type NestedField struct {
 }
 
 // GetNestedFields returns a list of all fields in the struct and its nested structs. Paths are dot-separated, e.g. "user.address.phoneNumber".
-func (c *Struct) GetNestedFields() []NestedField {
+func (c *Struct) GetNestedFields(ctx scopes.Context, decoding scopes.Decoding) []NestedField {
 	fields := make([]NestedField, 0, len(c.Fields))
 	for _, f := range c.Fields {
+		if !f.Field.CheckDecoderScope(ctx, decoding) {
+			continue
+		}
+		if !f.Field.CheckEncoderScope(ctx) {
+			continue
+		}
 		if f.Field.Struct != nil && !f.Anonymous {
-			ff := f.Field.Struct.GetNestedFields()
+			ff := f.Field.Struct.GetNestedFields(ctx, decoding)
 			for _, nf := range ff {
 				fields = append(fields, NestedField{
 					Path:  fmt.Sprintf("%s.%s", f.Field.Name, nf.Path),

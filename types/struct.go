@@ -166,31 +166,31 @@ func (c *Struct) initField(f reflect.StructField) {
 
 	res := &StructField{
 		Anonymous: f.Anonymous,
+		Embedded:  f.Anonymous,
 		Field:     &Field{Type: ft, Kind: ft.Kind(), TitleCase: f.Name},
 		Idx:       f.Index,
 	}
-	anonymous := f.Anonymous
 	res.Field.ParseTag(f.Tag)
 
 	if res.Field.Name == "" {
 		res.Field.Name = stringer.ToCamelCase(f.Name)
 	} else {
-		anonymous = false
+		res.Embedded = false
 	}
 
 	if res.Field.Kind == reflect.Struct && res.Field.Type != reflect.TypeFor[time.Time]() {
 		if ft != c.Type {
 			s := Cache.Get(ft)
 			res.Field.Struct = s
-			if anonymous {
+			if res.Embedded {
 				for _, f := range s.Fields {
-					c.addField(&StructField{Field: f.Field, Anonymous: f.Anonymous, Idx: append(res.Idx, f.Idx...)})
+					c.addField(&StructField{Field: f.Field, Anonymous: f.Anonymous, Embedded: true, Idx: append(res.Idx, f.Idx...)})
 				}
 				// Do not add the struct as a field if it's embedded
 				return
 			}
 		} else {
-			if anonymous {
+			if res.Embedded {
 				// Ignore self embedding
 				return
 			}

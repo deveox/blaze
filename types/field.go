@@ -34,6 +34,7 @@ type StructField struct {
 	Field *Field
 	// Shows if the field is anonymous (doesn't have name).
 	Anonymous bool
+	Embedded  bool
 	// Reflect path to the field in the struct. Usually there's only one index, but in case of anonymous structs, there can be more.
 	Idx []int
 }

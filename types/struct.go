@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/deveox/blaze/scopes"
 
@@ -177,7 +178,7 @@ func (c *Struct) initField(f reflect.StructField) {
 		anonymous = false
 	}
 
-	if res.Field.Kind == reflect.Struct {
+	if res.Field.Kind == reflect.Struct && res.Field.Type != reflect.TypeFor[time.Time]() {
 		if ft != c.Type {
 			s := Cache.Get(ft)
 			res.Field.Struct = s

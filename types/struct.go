@@ -35,7 +35,7 @@ type NestedField struct {
 func (c *Struct) GetNestedFields(ctx scopes.Context, decoding scopes.Decoding) []NestedField {
 	fields := make([]NestedField, 0, len(c.Fields))
 	for _, f := range c.Fields {
-		if !f.Field.CheckDecoderScope(ctx, decoding) {
+		if decoding != scopes.DECODE_ANY && !f.Field.CheckDecoderScope(ctx, decoding) {
 			continue
 		}
 		if !f.Field.CheckEncoderScope(ctx) {

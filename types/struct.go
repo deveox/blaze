@@ -26,8 +26,9 @@ func (c *Struct) GetField(name string) (*StructField, bool) {
 }
 
 type NestedField struct {
-	Path  string
-	Field *StructField
+	Path   string
+	GoPath string
+	Field  *StructField
 }
 
 // GetNestedFields returns a list of all fields in the struct and its nested structs. Paths are dot-separated, e.g. "user.address.phoneNumber".
@@ -44,14 +45,16 @@ func (c *Struct) GetNestedFields(ctx scopes.Context, decoding scopes.Decoding) [
 			ff := f.Field.Struct.GetNestedFields(ctx, decoding)
 			for _, nf := range ff {
 				fields = append(fields, NestedField{
-					Path:  fmt.Sprintf("%s.%s", f.Field.Name, nf.Path),
-					Field: nf.Field,
+					Path:   fmt.Sprintf("%s.%s", f.Field.Name, nf.Path),
+					GoPath: fmt.Sprintf("%s.%s", f.Field.TitleCase, nf.GoPath),
+					Field:  nf.Field,
 				})
 			}
 		} else {
 			fields = append(fields, NestedField{
-				Path:  f.Field.Name,
-				Field: f,
+				Path:   f.Field.Name,
+				GoPath: f.Field.TitleCase,
+				Field:  f,
 			})
 		}
 	}

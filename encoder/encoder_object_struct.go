@@ -16,7 +16,7 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 		e.WriteByte('{')
 	}
 	path := e.fields.currentPath
-
+	keep := e.keep
 	for _, fi := range si.Fields {
 		ok := fi.Field.CheckEncoderScope(e.config.Scope)
 		if !ok {
@@ -26,14 +26,19 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 		f := fi.Value(v)
 
 		// Handle zero values
-		if f.IsZero() && !fi.Field.KeepEmpty {
-			continue
+		if f.IsZero() {
+			if fi.Field.KeepEmpty {
+				e.keep = true
+			} else {
+				continue
+			}
 		}
 		e.fields.currentPath = path
 		err := encodeStructField(e, f, fi, f.Kind())
 		if err != nil {
 			return err
 		}
+		e.keep = false
 	}
 	e.fields.currentPath = path
 	last := len(e.bytes) - 1
@@ -42,10 +47,17 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 			e.bytes = e.bytes[:last]
 		}
 	} else {
-		if e.bytes[last] == ',' {
+		switch e.bytes[last] {
+		case '{':
+			if keep {
+				e.WriteByte('}')
+			} else {
+				e.bytes = e.bytes[:last]
+			}
+		case ',':
 			e.bytes[last] = '}'
-		} else {
-			e.bytes = append(e.bytes, '}')
+		default:
+			e.WriteByte('}')
 		}
 	}
 	return nil

@@ -18,6 +18,7 @@ type Encoder struct {
 	depth     int
 	fields    *fields
 	anonymous bool
+	keep      bool
 }
 
 // GetCurrentPath will return the path of the current field being encoded if encoder is created by MarshalPartial

@@ -67,9 +67,13 @@ func encodeStructField(e *Encoder, v reflect.Value, fi *types.StructField, kind 
 		case reflect.Struct, reflect.Map, reflect.Array, reflect.Slice:
 			// Encode full struct if its field name specified
 			if e.fields.Has(fi.Field.Name, fi.Field.Short) {
-				if !fi.Field.Short {
+				if !fi.Field.Short && fi.Field.Struct != nil {
 					e.fields.enabled = false
 				}
+			}
+
+			if fi.Field.Struct == nil {
+				return nil
 			}
 			// Otherwise, continue to check its fields
 		default:

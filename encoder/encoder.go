@@ -54,6 +54,9 @@ func (e *Encoder) Encode(v any) error {
 // If you pass fields, their names will be prepended with the current path of the encoder
 func (e *Encoder) EncodePartial(v any, fields []string, short int) error {
 	oldFields := *e.fields
+	if fields != nil || short == 1 {
+		e.fields.enabled = true
+	}
 	if e.fields.currentPath != "" {
 		for _, f := range fields {
 			e.fields.fields = append(e.fields.fields, e.fields.currentPath+"."+f)

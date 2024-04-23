@@ -82,11 +82,12 @@ func encodeStructField(e *Encoder, v reflect.Value, fi *types.StructField, kind 
 				if !fi.Field.Short && fi.Field.Struct != nil {
 					e.fields.enabled = false
 				}
+			} else {
+				if fi.Field.Struct == nil {
+					return nil
+				}
 			}
 
-			if fi.Field.Struct == nil {
-				return nil
-			}
 			// Otherwise, continue to check its fields
 		default:
 			// Skip if field name is not in the partial list

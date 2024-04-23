@@ -49,7 +49,7 @@ func encodeStruct(e *Encoder, v reflect.Value, si *types.Struct) error {
 	} else {
 		switch e.bytes[last] {
 		case '{':
-			if keep {
+			if keep || e.depth == 1 {
 				e.WriteByte('}')
 			} else {
 				e.bytes = e.bytes[:last]

@@ -55,21 +55,37 @@ func newArrayEncoder(t reflect.Type) EncoderFn {
 }
 
 func (e *Encoder) EncodeSlice(v reflect.Value, valueEnc EncoderFn) (err error) {
+	e.depth++
+	defer func() {
+		e.depth--
+	}()
 	e.bytes = append(e.bytes, '[')
 	n := v.Len()
 
 	for i := 0; i < n; i++ {
 		f := v.Index(i)
+		oldLen := len(e.bytes)
 		err = valueEnc(e, f)
 		if err != nil {
 			return err
 		}
-		e.bytes = append(e.bytes, ',')
+		if len(e.bytes) != oldLen {
+			e.bytes = append(e.bytes, ',')
+		}
 	}
-	if e.bytes[len(e.bytes)-1] == ',' {
-		e.bytes[len(e.bytes)-1] = ']'
-	} else {
-		e.bytes = append(e.bytes, ']')
+
+	last := len(e.bytes) - 1
+	switch e.bytes[last] {
+	case '[':
+		if e.keep || e.depth == 1 {
+			e.WriteByte(']')
+		} else {
+			e.bytes = e.bytes[:last]
+		}
+	case ',':
+		e.bytes[last] = ']'
+	default:
+		e.WriteByte(']')
 	}
 
 	return nil

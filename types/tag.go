@@ -10,12 +10,15 @@ const (
 	TAG_NAME_BLAZE = "blaze"
 
 	// `blaze` tag value
-	TAG_SCOPE_CLIENT = "client"
-	TAG_SCOPE_ADMIN  = "admin"
-	TAG_KEEP         = "keep"
-	TAG_NO_DB        = "no-db"
-	TAG_NO_HTTP      = "no-http"
-	TAG_SHORT        = "short"
+	TAG_SCOPE_CLIENT     = "client"
+	TAG_SCOPE_ADMIN      = "admin"
+	TAG_KEEP             = "keep"
+	TAG_NO_DB            = "no-db"
+	TAG_NO_HTTP          = "no-http"
+	TAG_SHORT            = "short"
+	TAG_TRANSFORM_STRING = "string"
+	TAG_ENCODE_STRING    = "string.encoder"
+	TAG_DECODE_STRING    = "string.decoder"
 
 	// `blaze` tag operations, can be combined with a dot, e.g. `read.update`
 	TAG_SV_IGNORE = "-"

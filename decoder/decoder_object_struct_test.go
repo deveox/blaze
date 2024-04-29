@@ -6,6 +6,7 @@ import (
 
 	gojson "github.com/goccy/go-json"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/stretchr/testify/require"
 )
 
 type Simple struct {
@@ -89,6 +90,23 @@ func newComplexStruct() []byte {
 func TestDecode_Struct_Complex(t *testing.T) {
 	s := newComplexStruct()
 	EqualUnmarshaling[Complex](t, s)
+}
+
+func TestDecode_Struct_StringTransform(t *testing.T) {
+	type Test struct {
+		F   float64 `blaze:"string.decoder"`
+		B   bool    `blaze:"string.decoder"`
+		I   int     `blaze:"string.decoder"`
+		Arr []int   `blaze:"string.decoder"`
+	}
+	data := []byte(`{"f":"1.1","b":"true","i":"1","arr":"[1,2,3]"}`)
+	var test Test
+	err := DDecoder.Unmarshal(data, &test)
+	require.Nil(t, err)
+	require.Equal(t, 1.1, test.F)
+	require.Equal(t, true, test.B)
+	require.Equal(t, 1, test.I)
+	require.Equal(t, []int{1, 2, 3}, test.Arr)
 }
 
 var benchStructComplex = newComplexStruct()

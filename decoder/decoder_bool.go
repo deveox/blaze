@@ -62,7 +62,7 @@ func (d *Decoder) decodeToBool() (bool, error) {
 		err := d.SkipFalse()
 		return false, err
 	default:
-		return false, d.ErrorF("[Blaze decodeBool()] invalid char, expected 't' or 'f'")
+		return false, d.ErrorF("[Blaze decodeBool()] invalid char %s, expected 't' or 'f'", string(c))
 	}
 }
 

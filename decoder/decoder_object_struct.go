@@ -85,9 +85,23 @@ func (d *Decoder) decodeStruct(v reflect.Value, si *types.Struct) error {
 				d.Changes = append(d.Changes, d.ChangesPrefix)
 			}
 			oldLen := len(d.Changes)
-			if err := d.decode(fv); err != nil {
-				return err
+			if field.Field.StringDecoding && d.char() == '"' {
+				s, err := d.DecodeString()
+				if err != nil {
+					return err
+				}
+				nd := d.Decoder([]byte(s))
+				if err := nd.decode(fv); err != nil {
+					nd.Release()
+					return err
+				}
+				nd.Release()
+			} else {
+				if err := d.decode(fv); err != nil {
+					return err
+				}
 			}
+
 			if field.Field.Struct != nil {
 				if len(d.Changes) == oldLen && len(d.Changes) > 0 {
 					d.Changes = d.Changes[:len(d.Changes)-1]

@@ -1,6 +1,7 @@
 package decoder
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -194,15 +195,8 @@ func (d *Decoder) decodeToFloat(bits int) (float64, error) {
 	d.SkipWhitespace()
 	c := d.char()
 	d.start = d.pos
+
 	switch c {
-	case '"':
-		d.pos++
-		fl, err := d.decodeToFloat(bits)
-		if err != nil {
-			return fl, err
-		}
-		d.pos++
-		return fl, nil
 	case 'n':
 		err := d.ScanNull()
 		return 0, err
@@ -222,7 +216,8 @@ func (d *Decoder) decodeToFloat(bits int) (float64, error) {
 			return 0, err
 		}
 	default:
-		return 0, d.Error("[Blaze decodeInt()] invalid char, expected '-' or integer")
+		fmt.Println(string(d.Buf))
+		return 0, d.ErrorF("[Blaze decodeFloat()] invalid char %s, expected '-' or integer", string(c))
 	}
 
 	str := BytesToString(d.Buf[d.start:d.pos])

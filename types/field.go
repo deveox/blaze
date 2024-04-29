@@ -94,7 +94,9 @@ type Field struct {
 	// Defines if the field should be marshaled as a short version.
 	Short bool
 	// The database name of the field. Populated by [GetDBName] function.
-	DBName string
+	DBName         string
+	StringEncoding bool
+	StringDecoding bool
 }
 
 // CheckEncoderScope checks if the field can be encoded in the given context.
@@ -148,6 +150,13 @@ loop:
 			f.KeepEmpty = true
 		case "omit":
 			f.KeepEmpty = false
+		case TAG_TRANSFORM_STRING:
+			f.StringDecoding = true
+			f.StringEncoding = true
+		case TAG_ENCODE_STRING:
+			f.StringEncoding = true
+		case TAG_DECODE_STRING:
+			f.StringDecoding = true
 		case TAG_NO_DB:
 			f.DBScope = false
 		case TAG_NO_HTTP:

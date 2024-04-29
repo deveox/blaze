@@ -31,6 +31,17 @@ func (d *Decoder) Unmarshal(data []byte, v any) error {
 	return d.config.UnmarshalScopedCtx(data, v, d.operation, d.Ctx)
 }
 
+func (d *Decoder) Decoder(data []byte) *Decoder {
+	n := d.config.NewDecoder(data)
+	n.operation = d.operation
+	n.Ctx = d.Ctx
+	return n
+}
+
+func (d *Decoder) Release() {
+	d.config.decoderPool.Put(d)
+}
+
 func (d *Decoder) UnmarshalScoped(data []byte, v any, operation scopes.Decoding) error {
 	return d.config.UnmarshalScopedCtx(data, v, operation, d.Ctx)
 }

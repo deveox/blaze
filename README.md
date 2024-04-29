@@ -284,6 +284,13 @@ func (*MyStruct) UnmarshalBlaze(d *decoder.Decoder, data []byte) error {
 
 ```
 
+### String transformation
+
+Blaze can decode/encode any type from/to string. Use `blaze:"string"` tag to enable this feature.
+
+Optionally you can use `blaze:"string.encoder"` and `blaze:"string.decoder"` to enable string transformation only for encoding or decoding.
+
+
 ## Non-standard behavior
 
 ### Deserialization

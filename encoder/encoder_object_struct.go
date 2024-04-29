@@ -104,8 +104,14 @@ func encodeStructField(e *Encoder, v reflect.Value, fi *types.StructField, kind 
 	}
 	e.Write(fi.Field.ObjectKey)
 	oldLen := len(e.bytes)
-	if err := e.encode(v); err != nil {
-		return err
+	if fi.Field.StringEncoding {
+		if err := encodeString(e, v); err != nil {
+			return err
+		}
+	} else {
+		if err := e.encode(v); err != nil {
+			return err
+		}
 	}
 	if len(e.bytes) == oldLen {
 		e.bytes = e.bytes[:len(e.bytes)-len(fi.Field.ObjectKey)]

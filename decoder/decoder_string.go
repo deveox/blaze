@@ -69,6 +69,7 @@ loop:
 				}
 				// Check if rune can be a surrogate.
 				if utf16.IsSurrogate(r) {
+					d.pos += 2
 					r2, err := d.getU4()
 					if err != nil {
 						return str, err

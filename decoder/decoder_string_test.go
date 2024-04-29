@@ -6,6 +6,7 @@ import (
 
 	gojson "github.com/goccy/go-json"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/stretchr/testify/require"
 )
 
 func encodedHtml() []byte {
@@ -22,6 +23,20 @@ func encodedString(size int) []byte {
 	res = append(res, '"')
 	return res
 
+}
+
+func TestDecode_String_UTF8(t *testing.T) {
+	bytes := []byte(`{"emoji":"\ud83c\udde6\ud83c\uddeb"}`)
+	type Test struct {
+		Emoji string `json:"emoji"`
+	}
+	test := Test{}
+	err := json.Unmarshal(bytes, &test)
+	require.NoError(t, err)
+	test2 := Test{}
+	err = DDecoder.Unmarshal(bytes, &test2)
+	require.NoError(t, err)
+	require.Equal(t, test, test2)
 }
 
 func TestDecode_String_HTML(t *testing.T) {
